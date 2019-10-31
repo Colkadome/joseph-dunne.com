@@ -1,52 +1,51 @@
+'use strict';
 /*
   gol.js
 */
 
-class Gol {
-
-  static stepFrag = `#ifdef GL_ES
+const STEP_FRAG = `#ifdef GL_ES
 precision mediump float;
 #endif
 
 uniform sampler2D state;
-uniform vec2 scale;
+uniform vec2 size;
 
-int get(vec2 offset) {
-  return int(texture2D(state, (gl_FragCoord.xy + offset) / scale).r);
+int get(int x, int y) {
+  return int(texture2D(state, (gl_FragCoord.xy + vec2(x, y)) / size).r);
 }
 
 void main() {
   int sum =
-    get(vec2(-1.0, -1.0)) +
-    get(vec2(-1.0,  0.0)) +
-    get(vec2(-1.0,  1.0)) +
-    get(vec2( 0.0, -1.0)) +
-    get(vec2( 0.0,  1.0)) +
-    get(vec2( 1.0, -1.0)) +
-    get(vec2( 1.0,  0.0)) +
-    get(vec2( 1.0,  1.0));
+    get(-1, -1) +
+    get(-1, 0) +
+    get(-1, 1) +
+    get(0, -1) +
+    get(0, 1) +
+    get(1, -1) +
+    get(1, 0) +
+    get(1, 1);
   if (sum == 3) {
     gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
   } else if (sum == 2) {
-    float current = float(get(vec2(0.0, 0.0)));
+    float current = float(get(0, 0));
     gl_FragColor = vec4(current, current, current, 1.0);
   } else {
     gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
   }
 }`;
 
-  static renderFrag = `#ifdef GL_ES
+const RENDER_FRAG = `#ifdef GL_ES
 precision mediump float;
 #endif
 
 uniform sampler2D state;
-//uniform vec2 scale;
+uniform vec2 size;
 
 void main() {
-  gl_FragColor = texture2D(state, gl_FragCoord.xy / 128.0);
+  gl_FragColor = texture2D(state, gl_FragCoord.xy / size);
 }`;
 
-  static quadVert = `#ifdef GL_ES
+const QUAD_VERT = `#ifdef GL_ES
 precision mediump float;
 #endif
 
@@ -55,6 +54,12 @@ attribute vec2 quad;
 void main() {
   gl_Position = vec4(quad, 0, 1.0);
 }`;
+
+function isPowerOf2 (v) {
+  return v > 0 && !(v & (v - 1));
+}
+
+class Gol {
 
   /**
    * Constructor.
@@ -67,12 +72,20 @@ void main() {
     if (!canvasEl) {
       throw new Error('Missing canvas element argument.');
     }
-    this.canvasEl = canvasEl;
+
+    // Check width and height.
+    // Must be powers of 2 for the texture to render.
+    opts = opts || {};
+    const width = opts.width || canvasEl.width;
+    const height = opts.height || canvasEl.height;
+    if (!isPowerOf2(width) || !isPowerOf2(height)) {
+      throw new Error('Width and Height must be powers of 2');
+    }
 
     // Set options.
-    opts = opts || {};
-    this.width = opts.width || canvasEl.width;
-    this.height = opts.height || canvasEl.height;
+    this.canvasEl = canvasEl;
+    this.width = width;
+    this.height = height;
   }
 
   /**
@@ -94,35 +107,20 @@ void main() {
     gl.disable(gl.DEPTH_TEST);  // Don't need this, we're not in 3D.
 
     // Create shader programs.
-    this._stepProgram = this._loadProgram(Gol.quadVert, Gol.stepFrag);
-    this._renderProgram = this._loadProgram(Gol.quadVert, Gol.renderFrag);
+    this._stepProgram = this._loadProgram(QUAD_VERT, STEP_FRAG);
+    this._renderProgram = this._loadProgram(QUAD_VERT, RENDER_FRAG);
 
     // Create buffers.
-    this._quadBuffer = this._createBuffer(new Float32Array([-0.5, -0.5, 1, -1, -1, 1, 1, 1]));
+    this._quadBuffer = this._createBuffer(new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
 
     // Create textures.
-    this._frontTexture = this._createTexture(4, 4, new Uint8Array([
-      255, 255, 0,
-      255, 255, 0,
-      255, 255, 0,
-      255, 255, 0,
-      255, 0, 0,
-      255, 0, 0,
-      255, 0, 0,
-      255, 0, 0,
-      0, 255, 0,
-      0, 255, 0,
-      0, 255, 0,
-      0, 255, 0,
-      0, 0, 255,
-      0, 0, 255,
-      0, 0, 255,
-      0, 0, 255,
-    ]));
+    this._frontTexture = this._createRandomTexture(this.width, this.height);
+    this._backTexture = this._createTexture(this.width, this.height, null);
 
     // Create framebuffers.
     this._stepFramebuffer = gl.createFramebuffer();
 
+    this._step = 0;
     return this;
   }
 
@@ -168,7 +166,7 @@ void main() {
     gl.shaderSource(vertShader, vertSource);
     gl.compileShader(vertShader);
     if (!gl.getShaderParameter(vertShader, gl.COMPILE_STATUS)) {
-      throw new Error(gl.getShaderInfoLog(shader));
+      throw new Error(gl.getShaderInfoLog(vertShader));
     }
 
     // Create fragment shader.
@@ -176,7 +174,7 @@ void main() {
     gl.shaderSource(fragShader, fragSource);
     gl.compileShader(fragShader);
     if (!gl.getShaderParameter(fragShader, gl.COMPILE_STATUS)) {
-      throw new Error(gl.getShaderInfoLog(shader));
+      throw new Error(gl.getShaderInfoLog(fragShader));
     }
 
     // Create program.
@@ -213,9 +211,30 @@ void main() {
   }
 
   /**
+   * Loads a random WebGL texture.
+   * @arg {Number} w - width of texture.
+   * @arg {Number} h - height of texture.
+   */
+  _createRandomTexture(w, h) {
+    
+    const p = 0.5;
+    const size = w * h * 4;
+    const data = new Uint8Array(size);
+    for (let i = 0; i < size; i += 4) {
+      const b = Math.random() < p ? 255 : 0;
+      data[i] = b;
+      data[i+1] = b;
+      data[i+2] = b;
+      data[i+3] = 255;
+    }
+
+    return this._createTexture(w, h, data);
+  }
+
+  /**
    * Loads a WebGL texture.
-   * @arg {String} vertSource - vertex shader string.
-   * @arg {String} fragSource - fragment shader string.
+   * @arg {Number} w - width of texture.
+   * @arg {Number} h - height of texture.
    */
   _createTexture(w, h, data) {
     const gl = this._gl;
@@ -226,7 +245,8 @@ void main() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, w, h, 0, gl.RGB, gl.UNSIGNED_BYTE, data);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+
     return texture;
   }
 
@@ -234,14 +254,28 @@ void main() {
    * Draws the current GOL board to the canvas.
    * @returns {Gol} - self.
    */
-  draw() {
+  _draw(isStep) {
     const gl = this._gl;
-    const program = this._renderProgram;
+    const program = isStep ? this._stepProgram : this._renderProgram;
+    const step = this._step % 2;
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.bindTexture(gl.TEXTURE_2D, this._frontTexture);
+    if (isStep) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this._stepFramebuffer);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, step ? this._frontTexture : this._backTexture, 0);
+    } else {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, step ? this._backTexture : this._frontTexture);
     gl.viewport(0, 0, this.width, this.height);
     gl.useProgram(program);
+
+    // Set uniforms.
+    const uSizeLocation = gl.getUniformLocation(program, 'size');
+    gl.uniform2f(uSizeLocation, this.width, this.height);
+    const uStateLocation = gl.getUniformLocation(program, 'state');
+    gl.uniform1i(uStateLocation, 0);
 
     // Bind vertex data.
     gl.bindBuffer(gl.ARRAY_BUFFER, this._quadBuffer);
@@ -252,6 +286,17 @@ void main() {
     // Draw.
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
+    if (isStep) {
+      this._step += 1;
+    }
+    return this;
   }
 
+  draw() {
+    return this._draw(false);
+  }
+
+  step() {
+    return this._draw(true);
+  }
 }

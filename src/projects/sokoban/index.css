@@ -1,0 +1,14 @@
+/*
+  index.css
+*/
+
+#sokoban {
+  line-height: 0;
+  display: inline-block;
+}
+
+#sokoban > img {
+  width: 24px;
+  height: 24px;
+  fill: #ff0000;
+}

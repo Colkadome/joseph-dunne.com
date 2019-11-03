@@ -83,9 +83,9 @@ function getRandomCharacter () {
 function scrambleElement (el, speed) {
 
   var content = el.innerText;
-  el.innerText = '';
+  el.innerText = getRandomCharacter();  // Needs to start with 1 character to stop jumping.
 
-  var i = 0;
+  var i = 1;
   var interval = setInterval(function() {
     if (i >= content.length) {
 
@@ -137,6 +137,8 @@ function activateToggleTheme () {
     event.preventDefault();
     toggleTheme();
   }, false);
+
+  addClass(document.body, 'transition');
 }
 
 /*
@@ -146,5 +148,7 @@ function activateToggleTheme () {
 window.addEventListener('load', function () {
   scrambleAll('.scramble', 10);
   activateToggleTheme();
-  loadTheme();
 });
+
+// Theme is loaded immediately to stop flickering.
+loadTheme();

@@ -46,4 +46,4 @@ function main () {
   }
 };
 
-window.onload = main;
+window.addEventListener('load', main);

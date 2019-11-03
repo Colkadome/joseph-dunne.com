@@ -1,0 +1,235 @@
+/*
+  common.css - Contains site-wide CSS.
+*/
+
+/* LESS THEMES */
+
+.lightThemeDefs() {
+  @backgroundColor: #eee;
+  @textPrimary: rgba(0,0,0,0.87);
+  @textSecondary: rgba(0,0,0,0.54);
+  @primary: #00aaff;
+  @secondary: #cc0000;
+}
+.darkThemeDefs() {
+  @backgroundColor: #333;
+  @textPrimary: rgba(255,255,255,0.87);
+  @textSecondary: rgba(255,255,255,0.54);
+  @primary: #88aacc;
+  @secondary: #fee;
+}
+.themeDependentCss() {
+  color: @textPrimary;
+  background-color: @backgroundColor;
+  .textSecondary {
+    color: @textSecondary;
+  }
+  .primary {
+    color: @primary;
+  }
+  .secondary {
+    color: @secondary;
+  }
+}
+body {
+  .lightThemeDefs();
+  .themeDependentCss();
+  &.dark {
+    .darkThemeDefs();
+    .themeDependentCss();
+  }
+}
+
+@import url('https://fonts.googleapis.com/css?family=Anonymous+Pro&display=swap');
+
+/*
+  Baseline.
+*/
+
+html {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+strong, b {
+  font-weight: bolder;
+}
+
+body {
+  margin: 0;
+  font-size: 0.875rem;
+  font-family: 'Anonymous Pro', monospace;
+  font-weight: 400;
+  line-height: 1.43;
+}
+body.transition {
+  transition: background-color 0.2s ease;
+}
+
+@media print {
+  body {
+    color: rgba(0, 0, 0, 0.87);
+    background-color: #fff;
+  }
+}
+
+body::backdrop {
+  background-color: #eee;
+}
+
+pre {
+  font-family: 'Anonymous Pro', monospace;
+  line-height: normal;
+}
+
+/*
+  Layout.
+*/
+
+.container {
+  width: 100%;
+  box-sizing: border-box;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+@media (min-width: 600px) {
+  .container {
+    padding-left: 24px;
+    padding-right: 24px;
+    max-width: 600px;
+  }
+}
+
+@media (min-width: 960px) {
+  .container {
+    padding-left: 32px;
+    padding-right: 32px;
+    max-width: 960px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .container {
+    max-width: 1920px;
+  }
+}
+
+/*
+  Theme button.
+*/
+
+.toggle-theme {
+  position: fixed;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  color: inherit;
+  background-color: currentColor;
+  opacity: 0.8;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+.toggle-theme:hover,
+.toggle-theme:focus {
+  transform: scale(1.5);
+}
+
+/*
+  Navbar.
+*/
+
+.navbar {
+
+}
+.navbar > ul {
+  margin: 0;
+  padding: 0;
+}
+.navbar > ul > li {
+  display: inline-block;
+  padding: 8px;
+}
+
+/*
+  Typography.
+*/
+
+.h1 {
+  font-size: 6rem;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.01562em;
+}
+.h2 {
+  font-size: 3.75rem;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.00833em;
+}
+.h3 {
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1.04;
+  letter-spacing: 0em;
+}
+.h4 {
+  font-size: 2.125rem;
+  font-weight: 400;
+  line-height: 1.17;
+  letter-spacing: 0.00735em;
+}
+.h5 {
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.33;
+  letter-spacing: 0em;
+}
+.h6 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: 0.0075em;
+}
+.body1 {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.00938em;
+}
+.body2 {
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.43;
+  letter-spacing: 0.01071em;
+}
+.caption {
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.66;
+  letter-spacing: 0.03333em;
+}
+.button {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.75;
+  letter-spacing: 0.02857em;
+  text-transform: uppercase;
+}

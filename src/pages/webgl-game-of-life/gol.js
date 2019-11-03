@@ -11,10 +11,11 @@ uniform sampler2D state;
 uniform vec2 size;
 
 int get(int x, int y) {
-  return int(texture2D(state, (gl_FragCoord.xy + vec2(x, y)) / size).r);
+  return int(texture2D(state, (gl_FragCoord.xy + vec2(x, y)) / size).a);
 }
 
 void main() {
+  gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
   int sum =
     get(-1, -1) +
     get(-1, 0) +
@@ -25,12 +26,12 @@ void main() {
     get(1, 0) +
     get(1, 1);
   if (sum == 3) {
-    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    gl_FragColor.a = 1.0;
   } else if (sum == 2) {
     float current = float(get(0, 0));
-    gl_FragColor = vec4(current, current, current, 1.0);
+    gl_FragColor.a = current;
   } else {
-    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    gl_FragColor.a = 0.0;
   }
 }`;
 
@@ -222,10 +223,10 @@ class Gol {
     const data = new Uint8Array(size);
     for (let i = 0; i < size; i += 4) {
       const b = Math.random() < p ? 255 : 0;
-      data[i] = b;
-      data[i+1] = b;
-      data[i+2] = b;
-      data[i+3] = 255;
+      data[i] = 128;
+      data[i+1] = 128;
+      data[i+2] = 128;
+      data[i+3] = b;
     }
 
     return this._createTexture(w, h, data);

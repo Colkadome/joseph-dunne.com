@@ -1,64 +1,83 @@
 /*
-  common.css
-
-  Contains site-wide CSS.
+  common.css - Contains site-wide CSS.
 */
-
-@import url('https://fonts.googleapis.com/css?family=Anonymous+Pro&display=swap');
-
-/*
-  Baseline.
-*/
-
-html {
-  box-sizing: border-box;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-*, *::before, *::after {
-  box-sizing: inherit;
-}
-
-strong, b {
-  font-weight: bolder;
-}
-
+/* LESS THEMES */
 body {
   color: rgba(0, 0, 0, 0.87);
-  margin: 0;
-  font-size: 0.875rem;
-  font-family: 'Anonymous Pro', monospace;
-  font-weight: 400;
-  line-height: 1.43;
   background-color: #eee;
-  transition: background-color 0.2s ease;
+}
+body .textSecondary {
+  color: rgba(0, 0, 0, 0.54);
+}
+body .primary {
+  color: #00aaff;
+}
+body .secondary {
+  color: #cc0000;
 }
 body.dark {
   color: rgba(255, 255, 255, 0.87);
   background-color: #333;
 }
-
+body.dark .textSecondary {
+  color: rgba(255, 255, 255, 0.54);
+}
+body.dark .primary {
+  color: #88aacc;
+}
+body.dark .secondary {
+  color: #fee;
+}
+@font-face {
+  font-family: 'Anonymous Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local('Anonymous Pro Regular'), local('AnonymousPro-Regular'), url(https://fonts.gstatic.com/s/anonymouspro/v13/rP2Bp2a15UIB7Un-bOeISG3pHls28A.ttf) format('truetype');
+}
+/*
+  Baseline.
+*/
+html {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+strong,
+b {
+  font-weight: bolder;
+}
+body {
+  margin: 0;
+  font-size: 0.875rem;
+  font-family: 'Anonymous Pro', monospace;
+  font-weight: 400;
+  line-height: 1.43;
+}
+body.transition {
+  transition: background-color 0.2s ease;
+}
 @media print {
   body {
     color: rgba(0, 0, 0, 0.87);
     background-color: #fff;
   }
 }
-
 body::backdrop {
   background-color: #eee;
 }
-
 pre {
   font-family: 'Anonymous Pro', monospace;
   line-height: normal;
 }
-
 /*
   Layout.
 */
-
 .container {
   width: 100%;
   box-sizing: border-box;
@@ -67,7 +86,6 @@ pre {
   padding-left: 16px;
   padding-right: 16px;
 }
-
 @media (min-width: 600px) {
   .container {
     padding-left: 24px;
@@ -75,7 +93,6 @@ pre {
     max-width: 600px;
   }
 }
-
 @media (min-width: 960px) {
   .container {
     padding-left: 32px;
@@ -83,23 +100,19 @@ pre {
     max-width: 960px;
   }
 }
-
 @media (min-width: 1280px) {
   .container {
     max-width: 1280px;
   }
 }
-
 @media (min-width: 1920px) {
   .container {
     max-width: 1920px;
   }
 }
-
 /*
   Theme button.
 */
-
 .toggle-theme {
   position: fixed;
   top: 2px;
@@ -115,17 +128,13 @@ pre {
   cursor: pointer;
   transition: transform 0.1s ease;
 }
-.toggle-theme:hover,.toggle-theme:focus {
+.toggle-theme:hover,
+.toggle-theme:focus {
   transform: scale(1.5);
 }
-
 /*
   Navbar.
 */
-
-.navbar {
-
-}
 .navbar > ul {
   margin: 0;
   padding: 0;
@@ -134,11 +143,9 @@ pre {
   display: inline-block;
   padding: 8px;
 }
-
 /*
   Typography.
 */
-
 .h1 {
   font-size: 6rem;
   font-weight: 300;
@@ -199,29 +206,4 @@ pre {
   line-height: 1.75;
   letter-spacing: 0.02857em;
   text-transform: uppercase;
-}
-
-/*
-  Colors.
-*/
-
-.secondary {
-  color: rgba(255, 255, 255, 0.54);
-}
-.dark .secondary {
-  color: rgba(0, 0, 0, 0.54);
-}
-
-.accent1 {
-  color: #cc0000;
-}
-.dark .accent1 {
-  color: #fee;
-}
-
-.accent2 {
-  color: #cc0000;
-}
-.dark .accent2 {
-  color: #fee;
 }

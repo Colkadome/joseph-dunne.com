@@ -8,6 +8,42 @@
 */
 
 /*
+  COMPONENTS.
+*/
+class ToggleThemeButton extends HTMLElement {
+  constructor() {
+    super();
+  }
+  connectedCallback() {
+
+    const button = document.createElement('button');
+    button.classList.add('toggle-theme');
+    button.addEventListener('click', function (event) {
+      event.preventDefault();
+      toggleTheme();
+    }, false);
+
+    this.appendChild(button);
+  }
+}
+customElements.define('toggle-theme-button', ToggleThemeButton);
+
+class TopNavbar extends HTMLElement {
+  constructor() {
+    super();
+  }
+  connectedCallback() {
+    this.innerHTML = `<nav class="navbar">
+      <ul>
+        <li><a href="/" class="button secondary">Home</a></li>
+        <li><a href="/pages" class="button secondary">Pages</a></li>
+      </ul>
+    </nav>`;
+  }
+}
+customElements.define('top-navbar', TopNavbar);
+
+/*
   Class toggling helpers.
 */
 function getClasses (el) {
@@ -126,28 +162,12 @@ function toggleClass (el, str) {
   return index < 0;
 }
 
-function activateToggleTheme () {
-
-  var buttonEl = document.getElementById('toggle-theme');
-  if (!buttonEl) {
-    return;
-  }
-
-  buttonEl.addEventListener('click', function (event) {
-    event.preventDefault();
-    toggleTheme();
-  }, false);
-
-  addClass(document.body, 'transition');
-}
-
 /*
   Onload.
 */
-
 window.addEventListener('load', function () {
   scrambleAll('.scramble', 10);
-  activateToggleTheme();
+  addClass(document.body, 'transition');
 });
 
 // Theme is loaded immediately to stop flickering.

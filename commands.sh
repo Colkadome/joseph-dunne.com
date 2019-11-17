@@ -73,8 +73,11 @@ function watch_files_for_changes {
 
 # Starts local version of the website.
 function rundev_command {
-  compile_all_less_files_to_css_files
-  watch_files_for_changes & run_local_server && fg
+  rm -rf dist
+  mkdir dist
+  node ./rundev.js
+  cd dist
+  python3 -m http.server
   exit 0
 }
 

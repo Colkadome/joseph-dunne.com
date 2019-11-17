@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <meta charset="UTF-8">
+  <meta name="description" content="Programmer">
+  <meta name="keywords" content="Joseph,Dunne,Programmer">
+  <meta name="author" content="Joseph Dunne">
+  <meta name="viewport" content="minimum-scale=1,initial-scale=1,width=device-width,shrink-to-fit=no">
+
+  <title>Joseph Dunne</title>
+
+  <link rel="stylesheet" href="/normalize.css">
+  <link rel="stylesheet" href="/common.css">
+  
+<link rel="stylesheet" href="./index.css">
+
+
+</head>
+<body>
+  <button id="toggle-theme" class="toggle-theme"></button>
+  <div class="container">
+    <nav class="navbar">
+      <ul>
+        <li><a href="/" class="button secondary">Home</a></li>
+        <li><a href="/pages" class="button secondary">Pages</a></li>
+      </ul>
+    </nav>
+    
+<h1 class="h3 primary">JD - GOL</h1>
+<h2 class="body1 scramble">WebGL Game of Life</h2>
+
+<p class="body2 textSecondary">
+  An implementation of Conway's Game of Life using WebGL shaders.
+  The board state is stored in two textures. On each step, a fragment shader will calulate
+  the next state of the board from one texture and save it to the other.
+</p>
+
+<p class="primary caption">
+  INSTRUCTIONS
+</p>
+<ul>
+  <li>Toggle - play/pause the Game of Life.</li>
+  <li>Step - progress one step.</li>
+</ul>
+
+<div class="app">
+
+  <div>
+    <button id="toggle">Toggle</button>
+    <button id="step">Step</button>
+  </div>
+
+  <div>
+    <canvas width="256" height="128" id="gol" class="pixelated"></canvas>
+  </div>
+
+</div>
+
+  </div>
+  <script src="/common.js"></script>
+  
+<script src="./gol.js"></script>
+<script src="./index.js"></script>
+
+</body>
+</html>

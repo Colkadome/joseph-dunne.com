@@ -1,6 +1,0 @@
-{
-  "title": "WebGL Game of Life",
-  "content": "./index.html",
-  "stylesheets": ["./index.css"],
-  "scripts": ["./gol.js", "index.js"]
-}

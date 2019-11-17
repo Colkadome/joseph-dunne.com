@@ -147,22 +147,6 @@ function scrambleAll (query, speed) {
 };
 
 /*
-  Theme toggling.
-*/
-
-function toggleClass (el, str) {
-  var classes = el.className ? el.className.split(' ') : [];
-  var index = classes.indexOf(str);
-  if (index >= 0) {
-    classes.splice(index, 1);
-  } else {
-    classes.push(str);
-  }
-  el.className = classes.join(' ');
-  return index < 0;
-}
-
-/*
   Onload.
 */
 window.addEventListener('load', function () {

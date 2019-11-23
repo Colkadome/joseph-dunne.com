@@ -3,118 +3,53 @@
   -------------------------------
   common.js
   -------------------------------
-
-  Common functions for the website.
 */
 
 /*
-  COMPONENTS.
+  THEME.
 */
-class ToggleThemeButton extends HTMLElement {
-  constructor() {
-    super();
-  }
-  connectedCallback() {
 
-    const button = document.createElement('button');
-    button.classList.add('toggle-theme');
-    button.addEventListener('click', function (event) {
-      event.preventDefault();
-      toggleTheme();
-    }, false);
-
-    this.appendChild(button);
-  }
-}
-customElements.define('toggle-theme-button', ToggleThemeButton);
-
-class TopNavbar extends HTMLElement {
-  constructor() {
-    super();
-  }
-  connectedCallback() {
-    this.innerHTML = `<nav class="navbar">
-      <ul>
-        <li><a href="/" class="button secondary">Home</a></li>
-        <li><a href="/pages" class="button secondary">Pages</a></li>
-      </ul>
-    </nav>`;
-  }
-}
-customElements.define('top-navbar', TopNavbar);
-
-/*
-  Class toggling helpers.
-*/
-function getClasses (el) {
-  return el.className ? el.className.split(' ') : [];
-}
-function addClass (el, cls) {
-  var classes = getClasses(el);
-  var index = classes.indexOf(cls);
-  if (index < 0) {
-    classes.push(cls);
-    el.className = classes.join(' ');
-    return true;
-  }
-  return false;
-}
-function removeClass (el, cls) {
-  var classes = getClasses(el);
-  var index = classes.indexOf(cls);
-  if (index >= 0) {
-    classes.splice(index, 1);
-    el.className = classes.join(' ');
-    return true;
-  }
-  return false;
-}
-function toggleClass (el, cls) {
-  var classes = getClasses(el);
-  var index = classes.indexOf(cls);
-  if (index < 0) {
-    classes.push(cls);
-  } else {
-    classes.splice(index, 1);
-  }
-  el.className = classes.join(' ');
-  return index < 0;
-}
-
-/*
-  Theme helpers.
-*/
 function loadTheme () {
   try {
     if (localStorage.getItem('theme') === 'dark') {
-      addClass(document.body, 'dark');
+      document.body.classList.add('dark');
     }
-  } catch (err) {
-
-  }
+  } catch (err) { }
 }
 function toggleTheme () {
-  var added = toggleClass(document.body, 'dark');
+  var added = document.body.classList.toggle('dark');
   try {
     if (added) {
       localStorage.setItem('theme', 'dark');
     } else {
       localStorage.removeItem('theme');
     }
-  } catch (err) {
+  } catch (err) { }
+}
 
+/*
+  THEME BUTTON.
+*/
+
+function activateToggleButton () {
+  var el = document.getElementById('toggle-theme');
+  if (el) {
+    el.addEventListener('click', function (event) {
+      toggleTheme();
+    }, false);
   }
 }
 
 /*
-  scramble - takes all DOM nodes with a chosen class and animates the text.
+  SCRAMBLE.
+
+  takes all DOM nodes with a chosen class and animates the text.
 */
 
-var characters = '!@#$%^&*()-_=+/?.>,<\';:[{]}\\|`~';
-
 function getRandomCharacter () {
+  var characters = '!@#$%^&*()-_=+/?.>,<\';:[{]}\\|`~';
   return characters[Math.floor(characters.length * Math.random())];
-};
+}
 
 function scrambleElement (el, speed) {
 
@@ -135,23 +70,23 @@ function scrambleElement (el, speed) {
 
     }
   }, speed);
-};
+}
 
 function scrambleAll (query, speed) {
-
   var els = document.querySelectorAll(query);
-
   for (var i = 0; i < els.length; i++) {
     scrambleElement(els[i], speed);
   }
-};
+}
 
 /*
-  Onload.
+  INIT.
 */
+
 window.addEventListener('load', function () {
   scrambleAll('.scramble', 10);
-  addClass(document.body, 'transition');
+  document.body.classList.add('transition');
+  activateToggleButton();
 });
 
 // Theme is loaded immediately to stop flickering.

@@ -79,7 +79,7 @@ function getExtension(str) {
 async function processTmplFile(path, outPath) {
 
   await ensureDirectoryForFile(outPath);
-  const templateFile = await fs.promises.readFile('./templates/main.dot', 'utf8');
+  const templateFile = await fs.promises.readFile('./main.tmpl', 'utf8');
   const contents = await fs.promises.readFile(path, 'utf8');
 
   const stylesheetsMatch = contents.match(/<!--STYLESHEETS-START-->(.*)<!--STYLESHEETS-END-->/s);
@@ -133,8 +133,8 @@ async function processJsFile(path, outPath) {
  */
 async function main() {
 
-  const rootPath = './src';
-  const distPath = './dist';
+  const rootPath = '../src';
+  const distPath = '../dist';
   const paths = await getListOfFiles(rootPath);
 
   for (let path of paths) {

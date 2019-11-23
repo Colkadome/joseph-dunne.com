@@ -75,8 +75,9 @@ function watch_files_for_changes {
 function rundev_command {
   rm -rf dist
   mkdir dist
-  node ./rundev.js
-  cd dist
+  cd node-scripts
+  node rundev.js
+  cd ../dist
   python3 -m http.server
   exit 0
 }

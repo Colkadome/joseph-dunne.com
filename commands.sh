@@ -77,8 +77,6 @@ function rundev_command {
   mkdir dist
   cd node-scripts
   node rundev.js
-  cd ../dist
-  python3 -m http.server
   exit 0
 }
 

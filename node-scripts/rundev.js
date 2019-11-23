@@ -1,7 +1,11 @@
 
+// Npm.
 const fs = require('fs');
 const less = require('less');
 const babel = require('@babel/core');
+
+// Lib.
+const httpServer = require('./lib/httpServer');
 
 /**
  * Ensures that a directory exists, given a path.
@@ -79,7 +83,7 @@ function getExtension(str) {
 async function processTmplFile(path, outPath) {
 
   await ensureDirectoryForFile(outPath);
-  const templateFile = await fs.promises.readFile('./main.tmpl', 'utf8');
+  const templateFile = await fs.promises.readFile('./templates/main.tmpl', 'utf8');
   const contents = await fs.promises.readFile(path, 'utf8');
 
   const stylesheetsMatch = contents.match(/<!--STYLESHEETS-START-->(.*)<!--STYLESHEETS-END-->/s);
@@ -129,6 +133,35 @@ async function processJsFile(path, outPath) {
 }
 
 /**
+ * Processes a file.
+ * @arg {String} path to file.
+ */
+async function processFile(path, outPath) {
+  switch (getExtension(path)) {
+    case '.tmpl': {
+      outPath = outPath.replace(/\.tmpl$/, '.html');
+      await processTmplFile(path, outPath);
+      break;
+    };
+    case '.less': {
+      outPath = outPath.replace(/\.less$/, '.css');
+      await processLessFile(path, outPath);
+      break;
+    };
+    case '.js': {
+      await processJsFile(path, outPath);
+      break;
+    };
+    default: {
+      await ensureDirectoryForFile(outPath);
+      await fs.promises.copyFile(path, outPath);
+      break;
+    }
+  }
+  console.log('out:', outPath);
+}
+
+/**
  * Main function.
  */
 async function main() {
@@ -138,30 +171,18 @@ async function main() {
   const paths = await getListOfFiles(rootPath);
 
   for (let path of paths) {
-    const sourcePath = `${rootPath}/${path}`;
-    switch (getExtension(path)) {
-      case '.tmpl': {
-        const outName = path.replace(/\.tmpl$/, '.html');
-        await processTmplFile(sourcePath, `${distPath}/${outName}`);
-        break;
-      };
-      case '.less': {
-        const outName = path.replace(/\.less$/, '.css');
-        await processLessFile(sourcePath, `${distPath}/${outName}`);
-        break;
-      };
-      case '.js': {
-        await processJsFile(sourcePath, `${distPath}/${path}`);
-        break;
-      };
-      default: {
-        const destPath = `${distPath}/${path}`;
-        await ensureDirectoryForFile(destPath);
-        await fs.promises.copyFile(sourcePath, destPath);
-        break;
-      }
-    }
+    await processFile(`${rootPath}/${path}`, `${distPath}/${path}`);
   }
+
+  const PORT = 8000;
+  const server = httpServer(distPath, PORT);
+  console.log(`Listening on port ${PORT}`);
+
+  fs.watch(rootPath, { recursive: true, encoding: 'utf8' }, function (eventType, filename) {
+    if (eventType === 'change') {
+      processFile(`${rootPath}/${filename}`, `${distPath}/${filename}`);
+    }
+  });
 }
 
 main();

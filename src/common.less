@@ -5,6 +5,7 @@
 /* LESS THEMES */
 
 .lightThemeDefs() {
+  @paper: #fff;
   @backgroundColor: #eee;
   @textPrimary: rgba(0,0,0,0.87);
   @textSecondary: rgba(0,0,0,0.54);
@@ -12,6 +13,7 @@
   @secondary: #cc0000;
 }
 .darkThemeDefs() {
+  @paper: #000;
   @backgroundColor: #333;
   @textPrimary: rgba(255,255,255,0.87);
   @textSecondary: rgba(255,255,255,0.54);
@@ -29,6 +31,9 @@
   }
   .secondary {
     color: @secondary;
+  }
+  .code {
+    background-color: @paper;
   }
 }
 body {
@@ -98,6 +103,7 @@ pre {
   margin-right: auto;
   padding-left: 16px;
   padding-right: 16px;
+  padding-bottom: 32px;
 }
 
 @media (min-width: 600px) {

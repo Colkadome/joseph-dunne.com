@@ -3,6 +3,7 @@
 const fs = require('fs');
 const less = require('less');
 const babel = require('@babel/core');
+const LessPluginCleanCSS = require('less-plugin-clean-css');
 
 // Lib.
 const httpServer = require('./lib/httpServer');
@@ -80,7 +81,8 @@ function getExtension(str) {
  * @arg {String} .tmpl input file
  * @arg {String} .html output file
  */
-async function processTmplFile(path, outPath) {
+async function processTmplFile(path, outPath, options) {
+  options = { ...options };
 
   await ensureDirectoryForFile(outPath);
   const templateFile = await fs.promises.readFile('./templates/main.tmpl', 'utf8');
@@ -103,11 +105,18 @@ async function processTmplFile(path, outPath) {
  * @arg {String} .less input file
  * @arg {String} .css output file
  */
-async function processLessFile(path, outPath) {
+async function processLessFile(path, outPath, options) {
+  options = { ...options };
+
+  const lessOpts = {};
+  if (options.prod) {
+    const cleanCSSPlugin = new LessPluginCleanCSS();
+    lessOpts.plugins = [cleanCSSPlugin];
+  }
 
   await ensureDirectoryForFile(outPath);
   const contents = await fs.promises.readFile(path, 'utf8');
-  const cssResult = await less.render(contents, {});
+  const cssResult = await less.render(contents, lessOpts);
   await fs.promises.writeFile(outPath, cssResult.css, 'utf8');
 }
 
@@ -116,40 +125,51 @@ async function processLessFile(path, outPath) {
  * @arg {String} .js input file.
  * @arg {String} .js output file.
  */
-async function processJsFile(path, outPath) {
+async function processJsFile(path, outPath, options) {
+  options = { ...options };
 
   await ensureDirectoryForFile(outPath);
-  const contents = await fs.promises.readFile(path, 'utf8');
+  let contents = await fs.promises.readFile(path, 'utf8');
 
-  const babelResult = babel.transform(contents, {
-    presets: [
-      ['@babel/preset-env', {
-        targets: { ie: '11' }
-      }]
-    ]
-  });
+  // Transpile if production.
+  if (options.prod) {
+    const babelResult = babel.transform(contents, {
+      comments: false,
+      presets: [
+        ['@babel/preset-env', {
+          targets: { ie: '11' }
+        }],
+        ['minify', {
+
+        }]
+      ]
+    });
+    contents = babelResult.code;
+  }
   
-  await fs.promises.writeFile(outPath, babelResult.code, 'utf8');
+  await fs.promises.writeFile(outPath, contents, 'utf8');
 }
 
 /**
  * Processes a file.
  * @arg {String} path to file.
  */
-async function processFile(path, outPath) {
+async function processFile(path, outPath, options) {
+  options = { ...options };
+
   switch (getExtension(path)) {
     case '.tmpl': {
       outPath = outPath.replace(/\.tmpl$/, '.html');
-      await processTmplFile(path, outPath);
+      await processTmplFile(path, outPath, options);
       break;
     };
     case '.less': {
       outPath = outPath.replace(/\.less$/, '.css');
-      await processLessFile(path, outPath);
+      await processLessFile(path, outPath, options);
       break;
     };
     case '.js': {
-      await processJsFile(path, outPath);
+      await processJsFile(path, outPath, options);
       break;
     };
     default: {
@@ -158,13 +178,14 @@ async function processFile(path, outPath) {
       break;
     }
   }
+
   console.log('out:', outPath);
 }
 
 /**
  * Main function.
  */
-async function main() {
+async function runDev() {
 
   const rootPath = '../src';
   const distPath = '../dist';
@@ -185,4 +206,29 @@ async function main() {
   });
 }
 
-main();
+/**
+ * Main building function.
+ */
+async function build() {
+
+  const rootPath = '../src';
+  const distPath = '../dist';
+  const paths = await getListOfFiles(rootPath);
+  const options = { prod: true };
+
+  for (let path of paths) {
+    await processFile(`${rootPath}/${path}`, `${distPath}/${path}`, options);
+  }
+}
+
+// Check what command is being run.
+const args = process.argv.slice(2);
+if (args.length === 0) {
+  console.log('arg required');
+  return;
+}
+switch (args[0]) {
+  case 'build': return build();
+  case 'rundev': return rundev();
+  default: console.log(`command '${args[0]}' not recognised`);
+}

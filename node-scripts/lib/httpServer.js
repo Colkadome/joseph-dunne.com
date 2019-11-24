@@ -25,21 +25,24 @@ module.exports = function (rootPath, port = 8000) {
     // Parse URL.
     const url = new URL(`http://localhost:${port}${req.url}`);
 
-    // Check for index file.
-    let path = url.pathname;
-    if (path.endsWith('/')) {
-      path += 'index.html';
+    // If path has no extension, assume its a directory.
+    // Pretty dumb.
+    let filename = url.pathname;
+    if (filename.endsWith('/')) {
+      filename += 'index.html';
     }
-    if (path.startsWith('/')) {
-      path = path.substring(1);
+
+    // Check for absolute path.
+    if (filename.startsWith('/')) {
+      filename = filename.substring(1);
     }
-    path = `${rootPath}/${path}`;
+    filename = `${rootPath}/${filename}`;
 
     // Determine content-type for file.
-    const contentType = getMimeTypeFromExtension(path);
+    const contentType = getMimeTypeFromExtension(filename);
 
     // Try and read file.
-    fs.readFile(path, (err, content) => {
+    fs.readFile(filename, (err, content) => {
       if (err) {
         if (err.code === 'ENOENT') {
           res.writeHead(404);

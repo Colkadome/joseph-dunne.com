@@ -73,10 +73,18 @@ function watch_files_for_changes {
 
 # Starts local version of the website.
 function rundev_command {
+  mkdir -p dist
+  cd node-scripts
+  node rundev.js rundev
+  exit 0
+}
+
+# Builds the website.
+function build_command {
   rm -rf dist
   mkdir dist
   cd node-scripts
-  node rundev.js
+  node rundev.js build
   exit 0
 }
 
@@ -106,6 +114,9 @@ function printusage_command {
 function main_func {
   if [ "$1" = "rundev" ]; then
     rundev_command "${@:2}"
+
+  elif [ "$1" = "build" ]; then
+    build_command "${@:2}"
 
   elif [ "$1" = "deploy" ]; then
     deploy_command "${@:2}"

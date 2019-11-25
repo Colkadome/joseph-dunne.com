@@ -32,7 +32,7 @@
   .secondary {
     color: @secondary;
   }
-  .code {
+  code {
     background-color: @paper;
   }
 }
@@ -67,10 +67,12 @@ strong, b {
 
 body {
   margin: 0;
+  /* Same properties as 'body2' */
   font-size: 0.875rem;
   font-family: 'Anonymous Pro', monospace;
   font-weight: 400;
   line-height: 1.43;
+  letter-spacing: 0.01071em;
 }
 body.transition {
   transition: background-color 0.2s ease;
@@ -167,7 +169,7 @@ pre {
 }
 .navbar > ul {
   margin: 0;
-  padding: 0;
+  padding: 0 0 0 16px;
 }
 .navbar > ul > li {
   display: inline-block;
@@ -175,44 +177,66 @@ pre {
 }
 
 /*
+  Misc.
+*/
+
+code {
+  display: block;
+  padding: 8px 16px;
+  white-space: pre-wrap;
+}
+
+/*
   Typography.
 */
 
-.h1 {
-  font-size: 6rem;
+h1 {
+  font-size: 3.5rem;
   font-weight: 300;
   line-height: 1;
   letter-spacing: -0.01562em;
 }
-.h2 {
-  font-size: 3.75rem;
+h2 {
+  font-size: 2.375rem;
   font-weight: 300;
   line-height: 1;
   letter-spacing: -0.00833em;
 }
-.h3 {
+h3 {
   font-size: 2rem;
   font-weight: 400;
   line-height: 1.04;
   letter-spacing: 0em;
 }
-.h4 {
-  font-size: 2.125rem;
+h4 {
+  font-size: 1.5625rem;
   font-weight: 400;
   line-height: 1.17;
   letter-spacing: 0.00735em;
 }
-.h5 {
-  font-size: 1.5rem;
+h5 {
+  font-size: 1.25rem;
   font-weight: 400;
   line-height: 1.33;
   letter-spacing: 0em;
 }
-.h6 {
-  font-size: 1.25rem;
+h6 {
+  font-size: 1.125rem;
   font-weight: 500;
   line-height: 1.6;
   letter-spacing: 0.0075em;
+}
+.subtitle1 {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.75;
+  letter-spacing: 0.00938em;
+}
+.subtitle2 {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.57;
+  letter-spacing: 0.00714em;
 }
 .body1 {
   font-size: 1rem;
@@ -238,4 +262,42 @@ pre {
   line-height: 1.75;
   letter-spacing: 0.02857em;
   text-transform: uppercase;
+}
+.overline {
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 2.66;
+  letter-spacing: 0.08333em;
+  text-transform: uppercase;
+}
+
+/*
+  Responsive font sizes.
+*/
+
+@media (min-width: 600px) {
+  h1 { font-size: 4.75rem; }
+  h2 { font-size: 3rem; }
+  h3 { font-size: 2.4038rem; }
+  h4 { font-size: 1.9231rem; }
+  h5 { font-size: 1.3158rem; }
+  h6 { font-size: 1.25rem; }
+}
+
+@media (min-width: 960px) {
+  h1 { font-size: 5.5rem; }
+  h2 { font-size: 3.5rem; }
+  h3 { font-size: 2.6442rem; }
+  h4 { font-size: 1.9231rem; }
+  h5 { font-size: 1.5038rem; }
+  h6 { font-size: 1.25rem; }
+}
+
+@media (min-width: 1280px) {
+  h1 { font-size: 6rem; }
+  h2 { font-size: 3.75rem; }
+  h3 { font-size: 2.8846rem; }
+  h4 { font-size: 2.1368rem; }
+  h5 { font-size: 1.5038rem; }
+  h6 { font-size: 1.25rem; }
 }

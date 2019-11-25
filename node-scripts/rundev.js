@@ -132,6 +132,7 @@ async function processJsFile(path, outPath, options) {
   let contents = await fs.promises.readFile(path, 'utf8');
 
   // Transpile if production.
+  // Dev doesn't need any transpiling.
   if (options.prod) {
     const babelResult = babel.transform(contents, {
       comments: false,
@@ -185,14 +186,18 @@ async function processFile(path, outPath, options) {
 /**
  * Main function.
  */
-async function runDev() {
+async function rundev() {
 
   const rootPath = '../src';
   const distPath = '../dist';
   const paths = await getListOfFiles(rootPath);
 
   for (let path of paths) {
-    await processFile(`${rootPath}/${path}`, `${distPath}/${path}`);
+    try {
+      await processFile(`${rootPath}/${path}`, `${distPath}/${path}`);
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   const PORT = 8000;
@@ -217,7 +222,11 @@ async function build() {
   const options = { prod: true };
 
   for (let path of paths) {
-    await processFile(`${rootPath}/${path}`, `${distPath}/${path}`, options);
+    try {
+      await processFile(`${rootPath}/${path}`, `${distPath}/${path}`, options);
+    } catch (err) {
+      console.log(err);
+    }
   }
 }
 

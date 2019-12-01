@@ -14,11 +14,16 @@
 </p>
 <ul>
   <li>Arrows - move piece.</li>
-  <li>Space - drop piece.</li>
+  <li>Space - select, drop piece.</li>
 </ul>
 
 <div class="app">
-  <canvas tabindex="0" width="128" height="256" id="catris"></canvas>
+  <div tabindex="0" id="catris-controller" class="catris-controller primary">
+    <canvas width="128" height="256" id="catris" class="catris"></canvas>
+    <div class="pause-text-container">
+      <span id="pause-text">Click to Start</span>
+    </div>
+  </div>
 </div>
 <!--CONTENT-END-->
 

@@ -6,6 +6,34 @@
   text-align: center;
 }
 
-#catris {
+.catris {
   background-color: #000;
+  width: 256px;
+  height: 512px;
+  image-rendering: pixelated;
+}
+
+.catris-controller {
+  display: inline-flex;
+  position: relative;
+  outline: none;
+  outline: 2px solid currentColor;
+}
+
+.catris-controller:focus {
+  outline: none;
+  background-color: unset;
+}
+
+.catris-controller .pause-text-container {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  background-color: rgba(128,128,128,0.5);
+}
+
+.catris-controller:focus .pause-text-container {
+  display: none;
 }

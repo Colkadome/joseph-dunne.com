@@ -22,6 +22,8 @@ class Catris {
     this.TILE_SIZE = 16;
     this.GRID_WIDTH = Math.floor(canvasEl.width / this.TILE_SIZE);
     this.GRID_HEIGHT = Math.floor(canvasEl.height / this.TILE_SIZE);
+    this.cursorX = null;
+    this.cursorY = null;
 
     this.onRequestAnimationFrame = this.onRequestAnimationFrame.bind(this);
   }
@@ -38,10 +40,61 @@ class Catris {
   init() {
     this.log('start');
 
+    // Load images.
     this.images = {};
-    this._loadImage('wall', './assets/img/wall.png');
+    this._loadImage(1, './assets/img/wall.png');
+    this._loadImage(2, './assets/img/cat-u.png');
+    this._loadImage(3, './assets/img/cat-d.png');
+    this._loadImage(4, './assets/img/cat-l.png');
+    this._loadImage(5, './assets/img/cat-r.png');
+
+    // Init grid.
+    this.grid = new Uint8Array(this.GRID_WIDTH * this.GRID_HEIGHT);
+
+    // Init bottom with walls.
+    for (let x = 0; x < this.GRID_WIDTH; x += 1) {
+      this.setGrid(x, this.GRID_HEIGHT - 1, 1);
+    }
+
+    // Init sides with walls.
+    for (let y = 0; y < this.GRID_HEIGHT - 1; y += 1) {
+      this.setGrid(0, y, 1);
+      this.setGrid(this.GRID_WIDTH - 1, y, 1);
+    }
+
+    // Add 2 random cats to the bottom.
+    this.setGrid(1, this.GRID_HEIGHT - 2, 5);
+    this.setGrid(2, this.GRID_HEIGHT - 2, 4);
+    this.setGrid(4, this.GRID_HEIGHT - 2, 2);
+    this.setGrid(4, this.GRID_HEIGHT - 3, 3);
+
+    // Set position to spawn.
+    this.cursorY = 0;
+    this.cursorX = 4;
+    this.toNextDown = 1;
 
     return this;
+  }
+
+  setGrid(x, y, n) {
+    if (x >= 0 && y >= 0 && x < this.GRID_WIDTH && y < this.GRID_HEIGHT) {
+      this.grid[(y * this.GRID_WIDTH) + x] = n;
+    }
+  }
+
+  getGrid(x, y) {
+    if (x >= 0 && y >= 0 && x < this.GRID_WIDTH && y < this.GRID_HEIGHT) {
+      return this.grid[(y * this.GRID_WIDTH) + x];
+    }
+    return 0;
+  }
+
+  drawGrid(x, y) {
+    const n = this.getGrid(x, y);
+    if (n > 0) {
+      const img = this.images[n];
+      this.ctx.drawImage(img, x * this.TILE_SIZE, y * this.TILE_SIZE);
+    }
   }
 
   /**
@@ -114,29 +167,12 @@ class Catris {
     // Clear all.
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw left wall.
-    for (let i = 0; i < this.GRID_HEIGHT; i += 1) {
-      this.drawWallAt(0, i);
+    // Draw grid.
+    for (let y = 0; y < this.GRID_HEIGHT; y += 1) {
+      for (let x = 0; x < this.GRID_WIDTH; x += 1) {
+        this.drawGrid(x, y);
+      }
     }
-
-    // Draw right wall.
-    for (let i = 0; i < this.GRID_HEIGHT; i += 1) {
-      this.drawWallAt(this.GRID_WIDTH - 1, i);
-    }
-
-    // Draw bottom wall.
-    for (let i = 1; i < this.GRID_WIDTH; i += 1) {
-      this.drawWallAt(i, this.GRID_HEIGHT - 1);
-    }
-
-  }
-
-  drawWallAt(x, y) {
-    this.drawImageAt('wall', x * this.TILE_SIZE, y * this.TILE_SIZE);
-  }
-
-  drawImageAt(name, x, y) {
-    this.ctx.drawImage(this.images[name], x, y);
   }
 
   arrowUp() {

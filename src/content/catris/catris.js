@@ -35,6 +35,11 @@ class Catris {
     this.bloodParticles = [];
 
     this.onRequestAnimationFrame = this.onRequestAnimationFrame.bind(this);
+
+    // Check for sound class.
+    if (typeof Sound !== 'undefined') {
+      this._sound = new Sound();
+    }
   }
 
   log(str) {
@@ -48,6 +53,9 @@ class Catris {
    */
   init() {
     this.log('start');
+
+    // Load sound.
+    this._loadSound('meow1', './assets/mp3/meow1.mp3');
 
     // Load images.
     this.images = {};
@@ -102,6 +110,21 @@ class Catris {
     if (n > 0) {
       const img = this.images[n];
       this.ctx.drawImage(img, x * this.TILE_SIZE, y * this.TILE_SIZE);
+    }
+  }
+
+  /**
+   * Loads a sound.
+   */
+  _loadSound(name, src) {
+    if (this._sound) {
+      return this._sound.loadSoundFromUrl(name, src);
+    }
+  }
+
+  _playSound(name) {
+    if (this._sound) {
+      return this._sound.playSound(name);
     }
   }
 
@@ -217,6 +240,8 @@ class Catris {
    * Moves block left. Returns true if it hits a wall.
    */
   moveBlockRight() {
+
+    this._playSound('meow1');
 
     const a = this.getGrid(this.cursorX, this.cursorY);
 

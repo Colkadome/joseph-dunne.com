@@ -32,4 +32,13 @@ class Sound {
     }
   }
 
+  playSquareWave(n = 1) {
+    const oscillator = this.audioContext.createOscillator();
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(n * 220, this.audioContext.currentTime); // value in hertz
+    oscillator.connect(this.audioContext.destination);
+    oscillator.start();
+    oscillator.stop(this.audioContext.currentTime + 0.05);
+  }
+
 }

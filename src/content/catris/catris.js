@@ -215,6 +215,10 @@ class Catris {
 
     if (this.getGrid(this.cursorX - 1, this.cursorY) === NONE) {
 
+      if (this._sound) {
+        this._sound.playSquareWave(1);
+      }
+
       this.setGrid(this.cursorX - 1, this.cursorY, a);
 
       if (a === CAT_R) {
@@ -241,8 +245,6 @@ class Catris {
    */
   moveBlockRight() {
 
-    this._playSound('meow1');
-
     const a = this.getGrid(this.cursorX, this.cursorY);
 
     if (
@@ -252,6 +254,10 @@ class Catris {
         && this.getGrid(this.cursorX + 2, this.cursorY) === NONE
       )
     ) {
+
+      if (this._sound) {
+        this._sound.playSquareWave(1);
+      }
 
       this.setGrid(this.cursorX + 1, this.cursorY, a);
       this.setGrid(this.cursorX, this.cursorY, NONE);

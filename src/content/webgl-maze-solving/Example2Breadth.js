@@ -10,28 +10,49 @@ precision mediump float;
 uniform sampler2D state;
 uniform vec2 size;
 
-int get(int x, int y) {
-  return int(texture2D(state, (gl_FragCoord.xy + vec2(x, y)) / size).a);
+vec4 getColorAt(int x, int y) {
+  return texture2D(state, (gl_FragCoord.xy + vec2(x, y)) / size);
+}
+
+int getValue(vec4 color) {
+  if (color.r == 0.0 && color.g == 0.0 && color.b == 0.0) {
+    return 0;
+  } else if (color.r == 1.0 && color.g == 1.0 && color.b == 1.0) {
+    return 1;
+  } else {
+    return 2;
+  }
+}
+
+int getValueAt(int x, int y) {
+  return getValue(getColorAt(x, y));
 }
 
 void main() {
-  gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
-  int sum =
-    get(-1, -1) +
-    get(-1, 0) +
-    get(-1, 1) +
-    get(0, -1) +
-    get(0, 1) +
-    get(1, -1) +
-    get(1, 0) +
-    get(1, 1);
-  if (sum == 3) {
-    gl_FragColor.a = 1.0;
-  } else if (sum == 2) {
-    float current = float(get(0, 0));
-    gl_FragColor.a = current;
-  } else {
-    gl_FragColor.a = 0.0;
+
+  vec4 color = getColorAt(0, 0);
+  int value = getValue(color);
+  gl_FragColor = color;
+
+  if (value == 0) {
+
+    
+  } else if (value == 1) {
+
+    if (getValueAt(-1, 0) == 2) {
+      gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+    } else if (getValueAt(1, 0) == 2) {
+      gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+    } else if (getValueAt(0, -1) == 2) {
+      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    } else if (getValueAt(0, 1) == 2) {
+      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    }
+
+  } else if (value == 2) {
+
+    gl_FragColor.b += 0.01;
+
   }
 }`;
 
@@ -84,6 +105,8 @@ class Example2Breadth {
     this.canvasEl = canvasEl;
     this.width = canvasEl.width;
     this.height = canvasEl.height;
+
+    this.loaded = false;
   }
 
   /**
@@ -122,6 +145,8 @@ class Example2Breadth {
     this.draw();
 
     this._step = 0;
+    this.loaded = true;
+    this.playing = false;
     return this;
   }
 
@@ -283,8 +308,10 @@ class Example2Breadth {
 
     if (isStep) {
       // If a step, render out to the back texture and swap textures.
+      this._step += 1;
       gl.bindFramebuffer(gl.FRAMEBUFFER, this._stepFramebuffer);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, step ? this._frontTexture : this._backTexture, 0);
+
     } else {
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
@@ -309,9 +336,6 @@ class Example2Breadth {
     // Draw.
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-    if (isStep) {
-      this._step += 1;
-    }
     return this;
   }
 
@@ -320,14 +344,25 @@ class Example2Breadth {
   }
 
   step() {
-    return this._draw(true);
+    this._draw(true);
+    this._draw(false);
   }
 
   play() {
-
+    if (!this.loaded || this.playing) {
+      return;
+    }
+    this._interval = setInterval(this.step.bind(this), 8);
+    this.playing = true;
   }
 
   pause() {
-
+    if (!this.playing) {
+      return;
+    }
+    if (this._interval != null) {
+      clearInterval(this._interval);
+    }
+    this.playing = false;
   }
 }

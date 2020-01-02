@@ -261,6 +261,7 @@ class Gol {
     const step = this._step % 2;
 
     if (isStep) {
+      this._step += 1;
       gl.bindFramebuffer(gl.FRAMEBUFFER, this._stepFramebuffer);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, step ? this._frontTexture : this._backTexture, 0);
     } else {
@@ -287,9 +288,6 @@ class Gol {
     // Draw.
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-    if (isStep) {
-      this._step += 1;
-    }
     return this;
   }
 

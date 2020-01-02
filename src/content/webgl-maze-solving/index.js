@@ -58,20 +58,21 @@ function runExample2 () {
 
   // Create canvas objects.
   const example2Breadth = new Example2Breadth(example2BreadthCanvas);
+  example2Breadth.init();
 
   // Toggle button.
   const buttonEl = document.getElementById('example2-play-button');
   if (buttonEl) {
     buttonEl.addEventListener('click', function (event) {
       event.preventDefault();
-      example2Breadth.init();
+      example2Breadth.play();
     }, false);
   }
 }
 
 function main () {
 
-  runExample1();
+  //runExample1();
   runExample2();
 
 };

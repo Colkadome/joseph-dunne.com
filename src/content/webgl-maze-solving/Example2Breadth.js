@@ -10,14 +10,29 @@ precision mediump float;
 uniform sampler2D state;
 uniform vec2 size;
 
+float rand(vec2 co) {
+  return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
+}
+
+float randComponent(float c, float m) {
+  return min(max(c + ((rand(gl_FragCoord.xy * m) - 0.5) * 0.01), 0.01), 0.99);
+}
+
+vec4 randColor(vec4 col) {
+  col.r = randComponent(col.r, 1.0);
+  col.g = randComponent(col.g, 2.0);
+  col.b = randComponent(col.b, 3.0);
+  return col;
+}
+
 vec4 getColorAt(int x, int y) {
   return texture2D(state, (gl_FragCoord.xy + vec2(x, y)) / size);
 }
 
 int getValue(vec4 color) {
-  if (color.r == 0.0 && color.g == 0.0 && color.b == 0.0) {
+  if (color.r == 1.0 && color.g == 1.0 && color.b == 1.0) {
     return 0;
-  } else if (color.r == 1.0 && color.g == 1.0 && color.b == 1.0) {
+  } else if (color.r == 0.0 && color.g == 0.0 && color.b == 0.0) {
     return 1;
   } else {
     return 2;
@@ -36,23 +51,26 @@ void main() {
 
   if (value == 0) {
 
-    
-  } else if (value == 1) {
-
-    if (getValueAt(-1, 0) == 2) {
-      gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
-    } else if (getValueAt(1, 0) == 2) {
-      gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
-    } else if (getValueAt(0, -1) == 2) {
-      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-    } else if (getValueAt(0, 1) == 2) {
-      gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    vec4 up = getColorAt(-1, 0);
+    if (getValue(up) == 2) {
+      gl_FragColor = randColor(up); return;
     }
 
-  } else if (value == 2) {
+    vec4 down = getColorAt(1, 0);
+    if (getValue(down) == 2) {
+      gl_FragColor = randColor(down); return;
+    }
 
-    gl_FragColor.b += 0.01;
+    vec4 left = getColorAt(0, -1);
+    if (getValue(left) == 2) {
+      gl_FragColor = randColor(left); return;
+    }
 
+    vec4 right = getColorAt(0, 1);
+    if (getValue(right) == 2) {
+      gl_FragColor = randColor(right); return;
+    }
+    
   }
 }`;
 
@@ -105,6 +123,7 @@ class Example2Breadth {
     this.canvasEl = canvasEl;
     this.width = canvasEl.width;
     this.height = canvasEl.height;
+    this._step = 0;
 
     this.loaded = false;
   }
@@ -123,7 +142,7 @@ class Example2Breadth {
     this._gl = gl;
 
     // Clear canvas.
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.disable(gl.DEPTH_TEST);  // Don't need this, we're not in 3D.
 
@@ -136,7 +155,7 @@ class Example2Breadth {
 
     // Create textures.
     this._frontTexture = await this._createTextureFromImageUrl(this.width, this.height, './img/2048maze.png');
-    this._setPixel(1, 1, [255, 0, 0, 255]);
+    this._setPixel(2, 2, [255, 0, 0, 255]);
     this._backTexture = this._createTexture(this.width, this.height, null);
 
     // Create framebuffers.
@@ -144,7 +163,6 @@ class Example2Breadth {
 
     this.draw();
 
-    this._step = 0;
     this.loaded = true;
     this.playing = false;
     return this;
@@ -264,9 +282,9 @@ class Example2Breadth {
         canvas.height = h;
 
         const ctx = canvas.getContext('2d');
-        ctx.beginPath();
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, w, h);
+        //ctx.beginPath();
+        //ctx.fillStyle = '#000';
+        //ctx.fillRect(0, 0, w, h);
         ctx.drawImage(img, 0, 0);
         
         resolve(this._createTexture(w, h, ctx.getImageData(0, 0, w, h).data));
@@ -344,15 +362,16 @@ class Example2Breadth {
   }
 
   step() {
-    this._draw(true);
-    this._draw(false);
+    return this._draw(true);
   }
 
   play() {
     if (!this.loaded || this.playing) {
       return;
     }
-    this._interval = setInterval(this.step.bind(this), 8);
+    this._interval = setInterval(() => {
+      this.step().draw();
+    }, 1);
     this.playing = true;
   }
 

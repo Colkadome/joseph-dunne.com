@@ -1,0 +1,11 @@
+/*
+  index.css
+*/
+
+.maze-container {
+  text-align: center;
+}
+.maze-container canvas {
+  border: 1px solid #aaa;
+  max-width: 100%;
+}

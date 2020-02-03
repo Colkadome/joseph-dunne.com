@@ -10,65 +10,43 @@ precision mediump float;
 uniform sampler2D state;
 uniform vec2 size;
 
+bool isWall (vec4 color) {
+  return color != vec4(1.0, 1.0, 1.0, 1.0) && color != vec4(1.0, 0.0, 0.0, 1.0);
+}
+
+bool isFloor (vec4 color) {
+  return color == vec4(1.0, 1.0, 1.0, 1.0);
+}
+
 float rand(vec2 co) {
   return fract(sin(dot(co.xy, vec2(12.9898,78.233))) * 43758.5453);
-}
-
-float randComponent(float c, float m) {
-  return min(max(c + ((rand(gl_FragCoord.xy * m) - 0.5) * 0.01), 0.01), 0.99);
-}
-
-vec4 randColor(vec4 col) {
-  col.r = randComponent(col.r, 1.0);
-  col.g = randComponent(col.g, 2.0);
-  col.b = randComponent(col.b, 3.0);
-  return col;
 }
 
 vec4 getColorAt(int x, int y) {
   return texture2D(state, (gl_FragCoord.xy + vec2(x, y)) / size);
 }
 
-int getValue(vec4 color) {
-  if (color.r == 1.0 && color.g == 1.0 && color.b == 1.0) {
-    return 0;
-  } else if (color.r == 0.0 && color.g == 0.0 && color.b == 0.0) {
-    return 1;
-  } else {
-    return 2;
-  }
-}
-
-int getValueAt(int x, int y) {
-  return getValue(getColorAt(x, y));
-}
-
 void main() {
 
-  vec4 color = getColorAt(0, 0);
-  int value = getValue(color);
-  gl_FragColor = color;
+  vec4 curr = getColorAt(0, 0);
+  gl_FragColor = curr;
 
-  if (value == 0) {
+  if (isWall(curr)) {
 
-    vec4 up = getColorAt(-1, 0);
-    if (getValue(up) == 2) {
-      gl_FragColor = randColor(up); return;
-    }
+    bool up = isFloor(getColorAt(0, -1));
+    bool down = isFloor(getColorAt(0, 1));
+    bool left = isFloor(getColorAt(-1, 0));
+    bool right = isFloor(getColorAt(1, 0));
 
-    vec4 down = getColorAt(1, 0);
-    if (getValue(down) == 2) {
-      gl_FragColor = randColor(down); return;
-    }
-
-    vec4 left = getColorAt(0, -1);
-    if (getValue(left) == 2) {
-      gl_FragColor = randColor(left); return;
-    }
-
-    vec4 right = getColorAt(0, 1);
-    if (getValue(right) == 2) {
-      gl_FragColor = randColor(right); return;
+    if (
+      (!left && !right && !up && down)
+      || (!left && !right && up && !down)
+      || (!left && right && !up && !down)
+      || (left && !right && !up && !down)
+    ) {
+      gl_FragColor += (rand(gl_FragCoord.xy) * 0.5);
+    } else {
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
     }
     
   }
@@ -99,7 +77,7 @@ function isPowerOf2 (v) {
   return v > 0 && !(v & (v - 1));
 }
 
-class Example2Breadth {
+class MazeGenerator {
 
   /**
    * Constructor.
@@ -132,7 +110,7 @@ class Example2Breadth {
    * Initialisation.
    * @returns {Gol} - self.
    */
-  async init() {
+  init() {
 
     // Check if WebGL is supported.
     const gl = this.canvasEl.getContext('webgl');
@@ -154,8 +132,9 @@ class Example2Breadth {
     this._quadBuffer = this._createBuffer(new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
 
     // Create textures.
-    this._frontTexture = await this._createTextureFromImageUrl(this.width, this.height, './img/2048maze.png');
-    this._setPixel(2, 2, [255, 0, 0, 255]);
+    this._frontTexture = this._createTexture(this.width, this.height, null);
+    this._setBlack();
+    this._setPixel(1, 1, [255, 255, 255, 255]);
     this._backTexture = this._createTexture(this.width, this.height, null);
 
     // Create framebuffers.
@@ -268,32 +247,27 @@ class Example2Breadth {
   }
 
   /**
-   * Creates a texture using a PNG element.
-   * @arg {String} PNG Image url.
+   * Sets the entire texture to black, with a red border.
    */
-  _createTextureFromImageUrl(w, h, url) {
-    return new Promise((resolve, reject) => {
-      const img = document.createElement('img');
-      img.src = url;
-      img.onload = () => {
+  _setBlack() {
+    const gl = this._gl;
 
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
+    const size = this.width * this.height * 4;
+    const arr = new Uint8Array(size);
+    for (let h = 0; h < this.height; h += 1) {
+      for (let w = 0; w < this.width; w += 1) {
+        const i = ((h * this.width) + w) * 4;
+        const c = h === 0 || h === this.height - 1 || w === 0 || w === this.width - 1;
+        arr[i] = c ? 255 : 0;
+        arr[i + 1] = 0;
+        arr[i + 2] = 0;
+        arr[i + 3] = 255;
+      }
+    }
 
-        const ctx = canvas.getContext('2d');
-        //ctx.beginPath();
-        //ctx.fillStyle = '#000';
-        //ctx.fillRect(0, 0, w, h);
-        ctx.drawImage(img, 0, 0);
-        
-        resolve(this._createTexture(w, h, ctx.getImageData(0, 0, w, h).data));
-
-      };
-      img.onerror = () => {
-        reject(new Error('Error loading image'));
-      };
-    });
+    gl.bindTexture(gl.TEXTURE_2D, this._frontTexture);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, this.width, this.height, gl.RGBA, gl.UNSIGNED_BYTE, arr, 0);
+    return this;
   }
 
   /**
@@ -336,7 +310,7 @@ class Example2Breadth {
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, step ? this._backTexture : this._frontTexture);
-    gl.viewport(0, 0, this.width, this.height);
+    gl.viewport(0, 0, this.width, this.height);  // Use texture width/height?
     gl.useProgram(program);
 
     // Set uniforms.

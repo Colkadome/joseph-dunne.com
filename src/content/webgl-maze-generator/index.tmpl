@@ -1,0 +1,33 @@
+<!--STYLESHEETS-START-->
+<link rel="stylesheet" href="./index.css">
+<!--STYLESHEETS-END-->
+
+<!--CONTENT-START-->
+<h1>WebGL Maze Generator</h1>
+
+<p class="body2 textSecondary">
+  How do we solve mazes?
+</p>
+
+<p class="primary caption">
+  INSTRUCTIONS
+</p>
+<ul>
+  <li>Toggle - play/pause the Game of Life.</li>
+  <li>Step - progress one step.</li>
+</ul>
+
+<div class="maze-container">
+  <div class="gutterBottom">
+    <button id="play-button">Play</button>
+  </div>
+  <div>
+    <canvas width="1024" height="1024" id="maze-canvas"></canvas>
+  </div>
+</div>
+<!--CONTENT-END-->
+
+<!--SCRIPTS-START-->
+<script src="./MazeGenerator.js"></script>
+<script src="./index.js"></script>
+<!--SCRIPTS-END-->

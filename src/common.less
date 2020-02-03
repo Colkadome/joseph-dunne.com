@@ -1,9 +1,12 @@
 /*
-  common.css - Contains site-wide CSS.
+  common.css
+
+  Contains site-wide CSS.
 */
 
-/* LESS THEMES */
-
+/*
+  LESS light and dark themes. 
+*/
 .lightThemeDefs() {
   @paper: #fff;
   @backgroundColor: #eee;
@@ -48,23 +51,19 @@ body {
 @import url('https://fonts.googleapis.com/css?family=Anonymous+Pro&display=swap');
 
 /*
-  Baseline.
+  Baseline CSS.
 */
-
 html {
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-
 *, *::before, *::after {
   box-sizing: inherit;
 }
-
 strong, b {
   font-weight: bolder;
 }
-
 body {
   margin: 0;
   /* Same properties as 'body2' */
@@ -77,18 +76,15 @@ body {
 body.transition {
   transition: background-color 0.2s ease;
 }
-
 @media print {
   body {
     color: rgba(0, 0, 0, 0.87);
     background-color: #fff;
   }
 }
-
 body::backdrop {
   background-color: #eee;
 }
-
 pre {
   font-family: 'Anonymous Pro', monospace;
   line-height: normal;
@@ -97,7 +93,6 @@ pre {
 /*
   Layout.
 */
-
 .container {
   width: 100%;
   box-sizing: border-box;
@@ -107,7 +102,6 @@ pre {
   padding-right: 16px;
   padding-bottom: 32px;
 }
-
 @media (min-width: 600px) {
   .container {
     padding-left: 24px;
@@ -115,7 +109,6 @@ pre {
     max-width: 600px;
   }
 }
-
 @media (min-width: 960px) {
   .container {
     padding-left: 32px;
@@ -123,13 +116,11 @@ pre {
     max-width: 960px;
   }
 }
-
 @media (min-width: 1280px) {
   .container {
     max-width: 1280px;
   }
 }
-
 @media (min-width: 1920px) {
   .container {
     max-width: 1920px;
@@ -139,7 +130,6 @@ pre {
 /*
   Theme button.
 */
-
 .toggle-theme {
   position: absolute;
   top: 2px;
@@ -163,7 +153,6 @@ pre {
 /*
   Navbar.
 */
-
 .navbar {
 
 }
@@ -179,7 +168,6 @@ pre {
 /*
   Misc.
 */
-
 code {
   display: block;
   padding: 8px 16px;
@@ -189,7 +177,7 @@ code {
 /*
   Typography.
 */
-
+/*
 h1 {
   font-size: 3.5rem;
   font-weight: 300;
@@ -202,25 +190,26 @@ h2 {
   line-height: 1;
   letter-spacing: -0.00833em;
 }
-h3 {
+*/
+h1 {
   font-size: 2rem;
   font-weight: 400;
   line-height: 1.04;
   letter-spacing: 0em;
 }
-h4 {
+h2 {
   font-size: 1.5625rem;
   font-weight: 400;
   line-height: 1.17;
   letter-spacing: 0.00735em;
 }
-h5 {
+h3 {
   font-size: 1.25rem;
   font-weight: 400;
   line-height: 1.33;
   letter-spacing: 0em;
 }
-h6 {
+h4 {
   font-size: 1.125rem;
   font-weight: 500;
   line-height: 1.6;
@@ -280,30 +269,33 @@ h6 {
 /*
   Responsive font sizes.
 */
-
 @media (min-width: 600px) {
+  /*
   h1 { font-size: 4.75rem; }
   h2 { font-size: 3rem; }
-  h3 { font-size: 2.4038rem; }
-  h4 { font-size: 1.9231rem; }
-  h5 { font-size: 1.3158rem; }
-  h6 { font-size: 1.25rem; }
+  */
+  h1 { font-size: 2.4038rem; }
+  h2 { font-size: 1.9231rem; }
+  h3 { font-size: 1.3158rem; }
+  h4 { font-size: 1.25rem; }
 }
-
 @media (min-width: 960px) {
+  /*
   h1 { font-size: 5.5rem; }
   h2 { font-size: 3.5rem; }
-  h3 { font-size: 2.6442rem; }
-  h4 { font-size: 1.9231rem; }
-  h5 { font-size: 1.5038rem; }
-  h6 { font-size: 1.25rem; }
+  */
+  h1 { font-size: 2.6442rem; }
+  h2 { font-size: 1.9231rem; }
+  h3 { font-size: 1.5038rem; }
+  h4 { font-size: 1.25rem; }
 }
-
 @media (min-width: 1280px) {
+  /*
   h1 { font-size: 6rem; }
   h2 { font-size: 3.75rem; }
-  h3 { font-size: 2.8846rem; }
-  h4 { font-size: 2.1368rem; }
-  h5 { font-size: 1.5038rem; }
-  h6 { font-size: 1.25rem; }
+  */
+  h1 { font-size: 2.8846rem; }
+  h2 { font-size: 2.1368rem; }
+  h3 { font-size: 1.5038rem; }
+  h4 { font-size: 1.25rem; }
 }

@@ -31,7 +31,7 @@ function main () {
       } else {
         interval = setInterval(function () {
           gol.step().draw();
-        }, 1);
+        }, 60);
       }
     }, false);
   }

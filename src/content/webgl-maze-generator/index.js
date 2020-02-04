@@ -21,18 +21,24 @@ function runExample () {
   const mazeCanvas = document.getElementById('maze-canvas');
 
   // Apply device pixel ratio canvas scaling.
-  //correctCanvasResolution(mazeCanvas);
+  correctCanvasResolution(mazeCanvas);
 
   // Create canvas objects.
-  const mazeGenerator = new MazeGenerator(mazeCanvas);
+  const mazeGenerator = new MazeGenerator(mazeCanvas, 8);
   mazeGenerator.init();
+  mazeGenerator.draw();
 
   // Toggle button.
   const buttonEl = document.getElementById('play-button');
   if (buttonEl) {
     buttonEl.addEventListener('click', function (event) {
       event.preventDefault();
-      mazeGenerator.play();
+
+      setInterval(() => {
+        mazeGenerator.step();
+        mazeGenerator.draw();
+      }, 1);
+
     }, false);
   }
 }

@@ -33,16 +33,24 @@ void main() {
 
   if (isWall(curr)) {
 
-    bool up = isFloor(getColorAt(0, -1));
-    bool down = isFloor(getColorAt(0, 1));
-    bool left = isFloor(getColorAt(-1, 0));
-    bool right = isFloor(getColorAt(1, 0));
+    bool u = isFloor(getColorAt(0, -1));
+    bool d = isFloor(getColorAt(0, 1));
+    bool l = isFloor(getColorAt(-1, 0));
+    bool r = isFloor(getColorAt(1, 0));
+    bool ul = isFloor(getColorAt(-1, -1));
+    bool ur = isFloor(getColorAt(1, -1));
+    bool dl = isFloor(getColorAt(-1, 1));
+    bool dr = isFloor(getColorAt(1, 1));
+
+    int count = int(u) + int(d) + int(l) + int(r) + int(ul) + int(ur) + int(dl) + int(dr);
 
     if (
-      (!left && !right && !up && down)
-      || (!left && !right && up && !down)
-      || (!left && right && !up && !down)
-      || (left && !right && !up && !down)
+      count <= 2 && (
+        (d && !u && !l && !r && !ul && !ur)
+        || (u && !d && !l && !r && !dl && !dr)
+        || (l && !r && !u && !d && !ur && !dr)
+        || (r && !l && !u && !d && !ul && !dl)
+      )
     ) {
       gl_FragColor += (rand(gl_FragCoord.xy) * 0.5);
     } else {
@@ -84,7 +92,7 @@ class MazeGenerator {
    * @arg {DOM Element} canvasEl - canvas element to use.
    * @arg {Object} opts - additional options.
    */
-  constructor(canvasEl) {
+  constructor(canvasEl, scale) {
 
     // Check canvas element.
     if (!canvasEl) {
@@ -101,6 +109,9 @@ class MazeGenerator {
     this.canvasEl = canvasEl;
     this.width = canvasEl.width;
     this.height = canvasEl.height;
+    this.scale = scale || 2;
+    this.mazeWidth = this.width / this.scale;
+    this.mazeHeight = this.height / this.scale;
     this._step = 0;
 
     this.loaded = false;
@@ -132,10 +143,10 @@ class MazeGenerator {
     this._quadBuffer = this._createBuffer(new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
 
     // Create textures.
-    this._frontTexture = this._createTexture(this.width, this.height, null);
+    this._frontTexture = this._createTexture(this.mazeWidth, this.mazeHeight, null);
     this._setBlack();
     this._setPixel(1, 1, [255, 255, 255, 255]);
-    this._backTexture = this._createTexture(this.width, this.height, null);
+    this._backTexture = this._createTexture(this.mazeWidth, this.mazeHeight, null);
 
     // Create framebuffers.
     this._stepFramebuffer = gl.createFramebuffer();
@@ -252,12 +263,12 @@ class MazeGenerator {
   _setBlack() {
     const gl = this._gl;
 
-    const size = this.width * this.height * 4;
+    const size = this.mazeWidth * this.mazeHeight * 4;
     const arr = new Uint8Array(size);
-    for (let h = 0; h < this.height; h += 1) {
-      for (let w = 0; w < this.width; w += 1) {
-        const i = ((h * this.width) + w) * 4;
-        const c = h === 0 || h === this.height - 1 || w === 0 || w === this.width - 1;
+    for (let h = 0; h < this.mazeHeight; h += 1) {
+      for (let w = 0; w < this.mazeWidth; w += 1) {
+        const i = ((h * this.mazeWidth) + w) * 4;
+        const c = h === 0 || h === this.mazeHeight - 1 || w === 0 || w === this.mazeWidth - 1;
         arr[i] = c ? 255 : 0;
         arr[i + 1] = 0;
         arr[i + 2] = 0;
@@ -266,7 +277,7 @@ class MazeGenerator {
     }
 
     gl.bindTexture(gl.TEXTURE_2D, this._frontTexture);
-    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, this.width, this.height, gl.RGBA, gl.UNSIGNED_BYTE, arr, 0);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, this.mazeWidth, this.mazeHeight, gl.RGBA, gl.UNSIGNED_BYTE, arr, 0);
     return this;
   }
 
@@ -310,12 +321,12 @@ class MazeGenerator {
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, step ? this._backTexture : this._frontTexture);
-    gl.viewport(0, 0, this.width, this.height);  // Use texture width/height?
+    gl.viewport(0, 0, isStep ? this.mazeWidth : this.width, isStep ? this.mazeHeight : this.height);  // Use texture width/height?
     gl.useProgram(program);
 
     // Set uniforms.
     const uSizeLocation = gl.getUniformLocation(program, 'size');
-    gl.uniform2f(uSizeLocation, this.width, this.height);
+    gl.uniform2f(uSizeLocation, isStep ? this.mazeWidth : (this.mazeWidth * this.scale), isStep ? this.mazeHeight : (this.mazeHeight * this.scale));
     const uStateLocation = gl.getUniformLocation(program, 'state');
     gl.uniform1i(uStateLocation, 0);
 
@@ -337,25 +348,5 @@ class MazeGenerator {
 
   step() {
     return this._draw(true);
-  }
-
-  play() {
-    if (!this.loaded || this.playing) {
-      return;
-    }
-    this._interval = setInterval(() => {
-      this.step().draw();
-    }, 1);
-    this.playing = true;
-  }
-
-  pause() {
-    if (!this.playing) {
-      return;
-    }
-    if (this._interval != null) {
-      clearInterval(this._interval);
-    }
-    this.playing = false;
   }
 }

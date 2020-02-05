@@ -1,0 +1,42 @@
+<!--STYLESHEETS-START-->
+<link rel="stylesheet" href="./index.css">
+<!--STYLESHEETS-END-->
+
+<!--CONTENT-START-->
+<h1>Chicken Cave</h1>
+
+<p class="body2 textSecondary scramble">
+  Explore the underground in this mysterious adventure game.
+</p>
+
+<p class="body1 secondary">
+  WARNING: HAS SOUND!
+</p>
+
+<p class="primary caption">
+  INSTRUCTIONS
+</p>
+<ul>
+  <li>Arrows - move.</li>
+  <li>z - jump.</li>
+  <li>x - throw egg.</li>
+</ul>
+
+<div class="app">
+  <div tabindex="0" id="game-controller" class="game-controller primary">
+
+    <canvas width="256" height="128" id="game-canvas" class="game-canvas"></canvas>
+
+    <div id="game-text" class="game-text">
+      Click to Start
+    </div>
+
+  </div>
+</div>
+<!--CONTENT-END-->
+
+<!--SCRIPTS-START-->
+<script src="./keyboard.js"></script>
+<script src="./game.js"></script>
+<script src="./index.js"></script>
+<!--SCRIPTS-END-->

@@ -1,0 +1,40 @@
+/*
+  index.css
+*/
+
+.app {
+  text-align: center;
+}
+
+.game-controller {
+  display: inline-flex;
+  position: relative;
+  outline: 2px solid currentColor;
+  cursor: pointer;
+}
+
+.game-controller:focus {
+  outline: none;
+  background-color: unset;
+  cursor: none;
+}
+
+.game-text {
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  background-color: rgba(128,128,128,0.5);
+  transform: translateY(-50%);
+}
+
+.game-controller:focus .game-text {
+  display: none;
+}
+
+.game-canvas {
+  background-color: #000;
+  image-rendering: pixelated;
+}

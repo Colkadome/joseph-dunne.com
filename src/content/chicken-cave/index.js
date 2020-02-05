@@ -10,16 +10,21 @@ window.addEventListener('load', function () {
     throw new Error('Game not found.');
   }
 
-  const canvasEl = document.getElementById('game');
+  const canvasEl = document.getElementById('game-canvas');
   const controlEl = document.getElementById('game-controller');
   const pauseTextEl = document.getElementById('game-text');
 
   // Init services.
   const keyboard = new _Keyboard(controlEl);
   keyboard.init();
+  
+  const graphics = new _Graphics(canvasEl);
+  graphics.init();
+
+  const sound = new _Sound();
 
   // Init game.
-  const game = new Game(canvasEl, keyboard);
+  const game = new Game(canvasEl, keyboard, graphics, sound);
   game.init();
   game.draw();
 
@@ -47,6 +52,7 @@ window.addEventListener('load', function () {
 
   controlEl.addEventListener('click', function (event) {
     event.preventDefault();
+    sound.init();
     pauseTextEl.innerText = 'Click to Continue';
   });
 

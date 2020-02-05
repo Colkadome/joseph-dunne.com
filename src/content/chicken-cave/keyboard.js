@@ -22,11 +22,19 @@ class _Keyboard {
     this._keysDown = new Set();
     this._keysHeld = new Set();
     this._keysUp = new Set();
+
+    this._init = false;
   }
 
   init() {
+    
+    if (this._init) {
+      return this;
+    }
+
     this.controlEl.addEventListener('keydown', this._onKeyDown.bind(this));
     this.controlEl.addEventListener('keyup', this._onKeyUp.bind(this));
+    this._init = true;
     return this;
   }
 

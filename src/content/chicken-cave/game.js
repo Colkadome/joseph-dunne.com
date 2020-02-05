@@ -3,7 +3,7 @@
   game.js
 */
 
-class Game {
+class _Game {
 
   constructor(canvasEl, keyboard, graphics, sound) {
 
@@ -27,6 +27,9 @@ class Game {
 
   update(dT) {
 
+    if (dT <= 0) {
+      return this;
+    }
 
     return this;
   }

@@ -13,6 +13,11 @@ class _Graphics {
 
   init() {
 
+    // Check if already initialised.
+    if (this.gl != null) {
+      return this;
+    }
+
     // Check if WebGL is supported.
     const gl = this.canvasEl.getContext('webgl');
     if (gl === null) {
@@ -26,6 +31,7 @@ class _Graphics {
   
     // Set 'gl' to mark as initialised.
     this.gl = gl;
+    return this;
   }
 
 }

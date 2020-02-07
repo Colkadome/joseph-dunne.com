@@ -32,8 +32,8 @@ window.addEventListener('load', function () {
     requestAnimationFrame(step);
   }
 
-  const stepButton = document.getElementById('play-button');
-  stepButton.addEventListener('click', function (event) {
+  const playButton = document.getElementById('play-button');
+  playButton.addEventListener('click', function (event) {
     event.preventDefault();
     if (playing) {
       playing = false;
@@ -43,6 +43,17 @@ window.addEventListener('load', function () {
     }
   });
 
+  const resetButton = document.getElementById('reset-button');
+  resetButton.addEventListener('click', function (event) {
+    event.preventDefault();
+    liquid.resetParticles();
+    liquid.draw();
+  });
 
+  const fullScreenButton = document.getElementById('full-screen-button');
+  fullScreenButton.addEventListener('click', function (event) {
+    event.preventDefault();
+    canvasEl.classList.toggle('full');
+  });
 
 });

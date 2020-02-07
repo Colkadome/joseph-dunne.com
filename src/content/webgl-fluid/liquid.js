@@ -455,7 +455,7 @@ void main() {
   }
 
   if (color.a > 0.6) {
-    gl_FragColor = vec4(0.0, 0.4, 1.0, 0.2);
+    gl_FragColor = vec4(0.0, 0.4, 1.0, 0.1);
   } else {
     gl_FragColor = vec4(0.0, 0.4, 1.0, 0.6);
   }

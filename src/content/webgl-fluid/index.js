@@ -4,17 +4,13 @@
 
 window.addEventListener('load', function () {
 
-  const options = {
-    count: 100,
-  };
-
   if (typeof Liquid === 'undefined') {
     console.log('Liquid not found');
     return;
   }
 
   const canvasEl = document.getElementById('liquid-canvas');
-  const liquid = new Liquid(canvasEl, options);
+  const liquid = new Liquid(canvasEl, {});
   liquid.init();
   liquid.draw();
 

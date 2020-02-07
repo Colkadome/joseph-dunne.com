@@ -14,6 +14,7 @@
   @textSecondary: rgba(0,0,0,0.54);
   @primary: #00aaff;
   @secondary: #cc0000;
+  @hover: #ddd;
 }
 .darkThemeDefs() {
   @paper: #000;
@@ -22,6 +23,7 @@
   @textSecondary: rgba(255,255,255,0.54);
   @primary: #88aacc;
   @secondary: #fee;
+  @hover: #444;
 }
 .themeDependentCss() {
   color: @textPrimary;
@@ -34,6 +36,9 @@
   }
   .secondary {
     color: @secondary;
+  }
+  .button:hover, .button:focus {
+    background-color: @hover;
   }
   code {
     background-color: @paper;
@@ -298,4 +303,42 @@ h4 {
   h2 { font-size: 2.1368rem; }
   h3 { font-size: 1.5038rem; }
   h4 { font-size: 1.25rem; }
+}
+
+/*
+  Buttons.
+*/
+.button {
+
+  color: inherit;
+  border: 0;
+  cursor: pointer;
+  margin: 0;
+  display: inline-flex;
+  outline: 0;
+  padding: 0;
+  position: relative;
+  align-items: center;
+  user-select: none;
+  border-radius: 0;
+  vertical-align: middle;
+  -moz-appearance: none;
+  justify-content: center;
+  text-decoration: none;
+  background-color: transparent;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.75;
+  letter-spacing: 0.02857em;
+  text-transform: uppercase;
+
+  padding: 4px 12px;
+  min-width: 64px;
+  border-radius: 4px;
+}
+.button.outlined {
+  border: 1px solid currentColor;
 }

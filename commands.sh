@@ -46,6 +46,14 @@ function rundev_command {
   exit 0
 }
 
+# Starts local version of the website, but as if it were production.
+function runprod_command {
+  mkdir -p dist
+  cd node-scripts
+  node rundev.js runprod
+  exit 0
+}
+
 # Builds the website.
 function build_command {
   rm -rf dist
@@ -79,8 +87,12 @@ function printusage_command {
 #
 
 function main_func {
+
   if [ "$1" = "rundev" ]; then
     rundev_command "${@:2}"
+
+  elif [ "$1" = "runprod" ]; then
+    runprod_command "${@:2}"
 
   elif [ "$1" = "build" ]; then
     build_command "${@:2}"

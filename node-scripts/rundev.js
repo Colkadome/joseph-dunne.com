@@ -184,21 +184,25 @@ async function processFile(path, outPath, options) {
 }
 
 /**
- * Main function.
+ * Function to build all files.
  */
-async function rundev() {
+async function buildFiles(rootPath, distPath, opts) {
 
-  const rootPath = '../src';
-  const distPath = '../dist';
   const paths = await getListOfFiles(rootPath);
 
   for (let path of paths) {
     try {
-      await processFile(`${rootPath}/${path}`, `${distPath}/${path}`);
+      await processFile(`${rootPath}/${path}`, `${distPath}/${path}`, opts);
     } catch (err) {
       console.log(err);
     }
   }
+}
+
+/**
+ * Function to monitor files.
+ */
+async function watch(rootPath, distPath, opts) {
 
   const PORT = 8000;
   const server = httpServer(distPath, PORT);
@@ -206,9 +210,34 @@ async function rundev() {
 
   fs.watch(rootPath, { recursive: true, encoding: 'utf8' }, function (eventType, filename) {
     if (eventType === 'change') {
-      processFile(`${rootPath}/${filename}`, `${distPath}/${filename}`);
+      processFile(`${rootPath}/${filename}`, `${distPath}/${filename}`, opts);
     }
   });
+}
+
+/**
+ * Main function.
+ */
+async function rundev() {
+
+  const rootPath = '../src';
+  const distPath = '../dist';
+  await buildFiles(rootPath, distPath);
+
+  watch(rootPath, distPath);
+}
+
+
+/**
+ * Main function.
+ */
+async function runprod() {
+
+  const rootPath = '../src';
+  const distPath = '../dist';
+  await buildFiles(rootPath, distPath, { prod: true });
+
+  watch(rootPath, distPath, { prod: true });
 }
 
 /**
@@ -218,16 +247,7 @@ async function build() {
 
   const rootPath = '../src';
   const distPath = '../dist';
-  const paths = await getListOfFiles(rootPath);
-  const options = { prod: true };
-
-  for (let path of paths) {
-    try {
-      await processFile(`${rootPath}/${path}`, `${distPath}/${path}`, options);
-    } catch (err) {
-      console.log(err);
-    }
-  }
+  await buildFiles(rootPath, distPath, { prod: true });
 }
 
 // Check what command is being run.
@@ -239,5 +259,6 @@ if (args.length === 0) {
 switch (args[0]) {
   case 'build': return build();
   case 'rundev': return rundev();
+  case 'runprod': return runprod();
   default: console.log(`command '${args[0]}' not recognised`);
 }

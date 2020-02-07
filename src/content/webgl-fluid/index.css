@@ -1,0 +1,8 @@
+/*
+  index.css
+*/
+
+.liquid-canvas {
+  image-rendering: pixelated;
+  border: 1px dashed currentColor;
+}

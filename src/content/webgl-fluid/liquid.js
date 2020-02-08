@@ -3,11 +3,6 @@
   liquid.js
 */
 
-function getApproximateUnitVector(x, y) {
-  const len = Math.sqrt((x * x) + (y * y));
-  return [x / len, y / len];
-}
-
 class Liquid {
 
   constructor(canvasEl, opts) {
@@ -146,7 +141,7 @@ class Liquid {
 
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);  // CLAMP_TO_EDGE needed for non-power-of-2 textures.
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -266,24 +261,32 @@ class Liquid {
     }
 
     const INTERACTION_RADIUS = 50.0;
-    const INTERACTION_RADIUS_SQ = Math.pow(INTERACTION_RADIUS, 2);
+    const INTERACTION_RADIUS_SQ = INTERACTION_RADIUS * INTERACTION_RADIUS;
     const STIFFNESS = 10000.0;  // Attraction.
     const STIFFNESS_NEAR = 10000.0;  // Spread.
     const REST_DENSITY = 3.0;  // Attraction when idle.
     const GRAVITY = 1000;
     const RANDOM_MOTION = 20.0;
 
+    const count = this.count;
+    const width = this.canvasEl.width;
+    const height = this.canvasEl.height;
+    const dTSqu = dT * dT;
+    const dTInv = 1 / dT;
+
     // Pass 1.
-    for (let i = 0; i < this.count * 2; i += 1) {
+    for (let i = 0; i < count * 2; i += 1) {
 
       // Update old positions.
       this.xyOld[i] = this.xy[i];
 
       // Apply random motion.
-      this.vxy[i] += (Math.random() - 0.5) * RANDOM_MOTION * dT * 2;
+      if (RANDOM_MOTION) {
+        this.vxy[i] += (Math.random() - 0.5) * RANDOM_MOTION * dT * 2;
+      }
 
       // Apply gravity to Y axis.
-      if (i % 2 > 0) {
+      if (GRAVITY && i % 2 > 0) {
         this.vxy[i] += GRAVITY * dT;
       }
 
@@ -292,25 +295,29 @@ class Liquid {
     }
 
     // Pass 2.
-    for (let i = 0; i < this.count; i += 1) {
+    for (let i = 0; i < count; i += 1) {
       const ix = (i * 2);
       const iy = ix + 1;
 
       // Find close neighbours.
-      // TODO: use hashmap here to help lookup?
       let density = 0;
       let nearDensity = 0;
-      const neighbours = {};
-      for (let k = 0; k < this.count; k += 1) {
+      let neighbourCount = 0;
+      for (let k = 0; k < count; k += 1) {
         if (k === i)  {
           continue;
         }
         const kx = (k * 2);
         const ky = kx + 1;
 
+        // Get difference.
+        const xd = Math.abs(this.xy[ix] - this.xy[kx]);
+        const yd = Math.abs(this.xy[iy] - this.xy[ky]);
+        if (xd > INTERACTION_RADIUS || yd > INTERACTION_RADIUS) {
+          continue;
+        }
+
         // Get square difference.
-        const xd = this.xy[ix] - this.xy[kx];
-        const yd = this.xy[iy] - this.xy[ky];
         const sq = (xd * xd) + (yd * yd);
         if (sq > INTERACTION_RADIUS_SQ) {
           continue;
@@ -322,9 +329,14 @@ class Liquid {
           continue;
         }
 
+        // The particle is a neighbour at this point. Add up densities.
         density += g * g;
         nearDensity += g * g * g;
-        neighbours[k] = g;
+        this.g[k] = g;
+
+        // Store index to neighbour.
+        this.neighbours[neighbourCount] = k;
+        neighbourCount += 1;
       }
 
       // Get density.
@@ -332,12 +344,13 @@ class Liquid {
       const pNear = STIFFNESS_NEAR * nearDensity;
 
       // Apply relaxation.
-      for (let k of Object.keys(neighbours)) {
-        const g = neighbours[k];
+      for (let n = 0; n < neighbourCount; n += 1) {
+        const k = this.neighbours[n];
+        const g = this.g[k];
         const kx = k * 2;
         const ky = kx + 1;
 
-        const m = ((p * g) + (pNear * g * g)) * dT * dT;
+        const m = ((p * g) + (pNear * g * g)) * dTSqu;
 
         const xd = this.xy[kx] - this.xy[ix];
         const yd = this.xy[ky] - this.xy[iy];
@@ -355,9 +368,7 @@ class Liquid {
     }
 
     // Pass 3.
-    const width = this.canvasEl.width;
-    const height = this.canvasEl.height;
-    for (let i = 0; i < this.count; i += 1) {
+    for (let i = 0; i < count; i += 1) {
       const ix = i * 2;
       const iy = ix + 1;
 
@@ -376,8 +387,8 @@ class Liquid {
       }
 
       // Calculate new velocity.
-      this.vxy[ix] = (this.xy[ix] - this.xyOld[ix]) * (1 / dT);
-      this.vxy[iy] = (this.xy[iy] - this.xyOld[iy]) * (1 / dT);
+      this.vxy[ix] = (this.xy[ix] - this.xyOld[ix]) * dTInv;
+      this.vxy[iy] = (this.xy[iy] - this.xyOld[iy]) * dTInv;
     }
 
   }
@@ -449,7 +460,6 @@ uniform vec2 size;
 void main() {
 
   vec4 color = texture2D(state, gl_FragCoord.xy / size);
-
   if (color.a < 0.5) {
     discard;
   }

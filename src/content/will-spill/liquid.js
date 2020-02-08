@@ -24,7 +24,6 @@ class Liquid {
     // Other properties to speed up access.
     this.g = new Float32Array(opts.count);
     this.neighbours = new Uint32Array(opts.count);
-    this.len = new Float32Array(opts.count);
   }
 
   init() {
@@ -58,6 +57,32 @@ class Liquid {
     // Init particles.
     this.resetParticles();
 
+    // Load will.
+    const img = new Image();
+    img.src = './will.png';
+    img.onload = () => {
+      const canv = document.createElement('canvas');
+      canv.width = img.width;
+      canv.height = img.height;
+      const ctx = canv.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const data = ctx.getImageData(0, 0, canv.width, canv.height);
+      this._willTexture = this._createTexture(data.width, data.height, data.data);
+    };
+
+    // Load will.
+    const img2 = new Image();
+    img2.src = './will2.png';
+    img2.onload = () => {
+      const canv = document.createElement('canvas');
+      canv.width = img2.width;
+      canv.height = img.height;
+      const ctx = canv.getContext('2d');
+      ctx.drawImage(img2, 0, 0);
+      const data = ctx.getImageData(0, 0, canv.width, canv.height);
+      this._willTexture2 = this._createTexture(data.width, data.height, data.data);
+    };
+
     return this;
   }
 
@@ -78,6 +103,48 @@ class Liquid {
     }
 
     return this;
+  }
+
+  /**
+   *  Add force at.
+   */
+  addForceAt(xx, yy, force) {
+
+    const INTERACTION_RADIUS = 50;
+    const INTERACTION_RADIUS_SQ = INTERACTION_RADIUS * INTERACTION_RADIUS;
+
+    for (let i = 0; i < this.count; i += 1) {
+      const ix = (i * 2);
+      const iy = ix + 1;
+
+      // Get position.
+      const x = this.xy[ix];
+      const y = this.xy[iy];
+
+      // Get distance to point.
+      const xd = x - xx;
+      const yd = y - yy;
+      const sq = (xd * xd) + (yd * yd);
+      if (sq > INTERACTION_RADIUS_SQ) {
+        continue;
+      }
+
+      // Get gradient.
+      const len = Math.sqrt(sq);
+      const g = 1 - (len / INTERACTION_RADIUS);
+      if (g === 0) {
+        continue;
+      }
+
+      // Get unit vector.
+      const dx = xd / len;
+      const dy = yd / len;
+
+      // Add force.
+      this.vxy[ix] += dx * len * force;
+      this.vxy[iy] += dy * len * force;
+    }
+
   }
 
   /**
@@ -205,16 +272,21 @@ class Liquid {
     gl.enableVertexAttribArray(aVelocityPosition);
     gl.vertexAttribPointer(aVelocityPosition, 2, gl.FLOAT, false, 0, 0);
 
+    // Will texture.
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this._willTexture);
+    const uWillLocation = gl.getUniformLocation(this._pass1Program, 'state');
+    gl.uniform1i(uWillLocation, 0);
+
     // Clear.
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Blend func.
-    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     // Draw points.
     gl.drawArrays(gl.POINTS, 0, this.count);
-
 
 
     // PASS 2.
@@ -263,9 +335,9 @@ class Liquid {
 
     const INTERACTION_RADIUS = 50.0;
     const INTERACTION_RADIUS_SQ = INTERACTION_RADIUS * INTERACTION_RADIUS;
-    const STIFFNESS = 10000.0;  // Attraction.
+    const STIFFNESS = 100.0;  // Attraction.
     const STIFFNESS_NEAR = 10000.0;  // Spread.
-    const REST_DENSITY = 2.0;  // Attraction when idle.
+    const REST_DENSITY = 1.0;  // Attraction when idle.
     const GRAVITY = 1000;
     const RANDOM_MOTION = 20.0;
 
@@ -325,9 +397,8 @@ class Liquid {
         }
 
         // Get gradient.
-        const len = Math.sqrt(sq);
-        const g = 1 - (len / INTERACTION_RADIUS);
-        if (g === 0 || Number.isNaN(g)) {
+        const g = 1 - (Math.sqrt(sq) / INTERACTION_RADIUS);
+        if (g === 0) {
           continue;
         }
 
@@ -335,7 +406,6 @@ class Liquid {
         density += g * g;
         nearDensity += g * g * g;
         this.g[k] = g;
-        this.len[k] = len;
 
         // Store index to neighbour.
         this.neighbours[neighbourCount] = k;
@@ -350,14 +420,17 @@ class Liquid {
       for (let n = 0; n < neighbourCount; n += 1) {
         const k = this.neighbours[n];
         const g = this.g[k];
-        const len = this.len[k];
         const kx = k * 2;
         const ky = kx + 1;
 
-        const m = ((p + (pNear * g)) * g * dTSqu) / len;
+        const m = ((p * g) + (pNear * g * g)) * dTSqu;
 
-        const dx = (this.xy[kx] - this.xy[ix]) * m;
-        const dy = (this.xy[ky] - this.xy[iy]) * m;
+        const xd = this.xy[kx] - this.xy[ix];
+        const yd = this.xy[ky] - this.xy[iy];
+        const len = Math.sqrt((xd * xd) + (yd * yd));
+
+        const dx = (xd / len) * m;
+        const dy = (yd / len) * m;
 
         this.xy[ix] += dx * -0.5;
         this.xy[iy] += dy * -0.5;
@@ -422,6 +495,8 @@ precision mediump float;
 #endif
 
 varying float speed;
+uniform sampler2D state;
+uniform vec2 u_size;
 
 void main() {
 
@@ -433,7 +508,9 @@ void main() {
     discard;
   }
 
-  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0 - (dist * 2.0));
+  vec3 color = texture2D(state, gl_PointCoord.xy).rgb;
+
+  gl_FragColor = vec4(color, 1.0 - (dist * 2.0));
 }`;
 
 /*
@@ -460,14 +537,16 @@ uniform vec2 size;
 void main() {
 
   vec4 color = texture2D(state, gl_FragCoord.xy / size);
-  if (color.a < 0.5) {
+  if (color.a < 0.1) {
     discard;
   }
 
-  if (color.a > 0.6) {
-    gl_FragColor = vec4(0.0, 0.4, 1.0, 0.1);
+  if (color.a > 0.2) {
+    color.a = 1.0;
   } else {
-    gl_FragColor = vec4(0.0, 0.4, 1.0, 0.6);
+    color = vec4(1.0, 0.0, 0.0, 0.6);
   }
+
+  gl_FragColor = color;
   
 }`;

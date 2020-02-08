@@ -324,6 +324,9 @@ class Liquid {
           continue;
         }
 
+        // Get ratio.
+        // TODO: https://www.h3xed.com/programming/fast-unit-vector-calculation-for-2d-games
+
         // Get gradient.
         const len = Math.sqrt(sq);
         const g = 1 - (len / INTERACTION_RADIUS);

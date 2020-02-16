@@ -26,7 +26,7 @@
   left: 0;
   width: 100%;
   text-align: center;
-  background-color: rgba(128,128,128,0.5);
+  background-color: #000;
   transform: translateY(-50%);
 }
 
@@ -37,4 +37,6 @@
 .game-canvas {
   background-color: #000;
   image-rendering: pixelated;
+  width: 512px;
+  height: 256px;
 }

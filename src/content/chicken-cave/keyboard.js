@@ -5,19 +5,20 @@
 
 class _Keyboard {
 
-  static activeKeys = new Set([
-    'arrowup',
-    'arrowdown',
-    'arrowleft',
-    'arrowright',
-    'x',
-    'z',
-    'shift',
-  ]);
-
   constructor(controlEl) {
 
     this.controlEl = controlEl;
+
+    // Keys to listen for.
+    this.activeKeys = new Set([
+      'arrowup',
+      'arrowdown',
+      'arrowleft',
+      'arrowright',
+      'x',
+      'z',
+      'shift',
+    ]);
 
     this._keysDown = new Set();
     this._keysHeld = new Set();
@@ -27,37 +28,40 @@ class _Keyboard {
   }
 
   init() {
-    
     if (this._init) {
       return this;
     }
 
     this.controlEl.addEventListener('keydown', this._onKeyDown.bind(this));
     this.controlEl.addEventListener('keyup', this._onKeyUp.bind(this));
+
     this._init = true;
     return this;
   }
 
   _onKeyDown(event) {
     const key = event.key.toLowerCase();
-    if (_Keyboard.activeKeys.has(key)) {
+    if (this.activeKeys.has(key)) {
       event.preventDefault();
 
       if (!this._keysHeld.has(key)) {
         this._keysDown.add(key);
       }
+      
       this._keysHeld.add(key);
     }
   }
 
   _onKeyUp(event) {
     const key = event.key.toLowerCase();
-    if (_Keyboard.activeKeys.has(key)) {
+    if (this.activeKeys.has(key)) {
       event.preventDefault();
 
+      // Makes sure key is 'held' for at least 1 tick.
       if (!this._keysDown.has(key)) {
-        this._keysHeld.delete(key);  // Makes sure key is held for at least 1 tick.
+        this._keysHeld.delete(key);
       }
+
       this._keysUp.add(key);
     }
   }

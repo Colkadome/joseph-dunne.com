@@ -39,7 +39,7 @@ window.addEventListener('load', function () {
   const sound = new _Sound();
   keyboard.init();
   graphics.init();
-  //sound.init();
+  //sound.init();  Sound only allowed after user interaction.
 
   // Init game.
   const game = new _Game(canvasEl, keyboard, graphics, sound);

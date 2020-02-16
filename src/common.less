@@ -37,11 +37,17 @@
   .secondary {
     color: @secondary;
   }
-  .button:hover, .button:focus {
+  .button:hover,.button:focus {
     background-color: @hover;
   }
   code {
     background-color: @paper;
+  }
+  .input {
+    border-color: @textSecondary;
+    &:hover,&:focus {
+      border-color: @textPrimary;
+    }
   }
 }
 body {
@@ -149,25 +155,24 @@ pre {
   opacity: 0.8;
   cursor: pointer;
   transition: transform 0.1s ease;
-}
-.toggle-theme:hover,
-.toggle-theme:focus {
-  transform: scale(1.5);
+
+  &:hover,&:focus {
+    transform: scale(1.5);
+  }
 }
 
 /*
   Navbar.
 */
 .navbar {
-
-}
-.navbar > ul {
-  margin: 0;
-  padding: 0 0 0 16px;
-}
-.navbar > ul > li {
-  display: inline-block;
-  padding: 8px;
+  & > ul {
+    margin: 0;
+    padding: 0 0 0 16px;
+    & > li {
+      display: inline-block;
+      padding: 8px;
+    }
+  }
 }
 
 /*
@@ -338,7 +343,29 @@ h4 {
   padding: 4px 12px;
   min-width: 64px;
   border-radius: 4px;
+
+  &.outlined {
+    border: 1px solid currentColor;
+  }
 }
-.button.outlined {
+
+/*
+  Inputs.
+*/
+.input {
+
+  font: inherit;
+  color: currentColor;
+  min-width: 256px;
+  height: 1.1875em;
+  margin: 0;
+  display: inline-block;
+  padding: 6px;
+  background: none;
+  box-sizing: content-box;
   border: 1px solid currentColor;
+  border-radius: 2px;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+
 }

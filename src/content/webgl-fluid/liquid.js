@@ -6,51 +6,76 @@
 class Liquid {
 
   constructor(canvasEl, opts) {
+    if (!canvasEl) {
+      throw new Error('Canvas is required');
+    }
+    this.canvasEl = canvasEl;
+
+    // Merge options with default values.
     opts = {
       count: 100,
+      interactionRadius: 50,
+      stiffness: 10000,
+      stiffnessNear: 10000,
+      restDensity: 2,
+      gravity: 1000,
+      randomMotion: 20,
       ...opts,
     };
 
-    this.canvasEl = canvasEl;
-    this.width = this.canvasEl.width;
-    this.height = this.canvasEl.height;
     this.count = opts.count;
-
-    // Particle properties.
-    this.xy = new Float32Array(opts.count * 2);
-    this.vxy = new Float32Array(opts.count * 2);
-    this.xyOld = new Float32Array(opts.count * 2);
-
-    // Other properties to speed up access.
-    this.g = new Float32Array(opts.count);
-    this.neighbours = new Uint32Array(opts.count);
-    this.len = new Float32Array(opts.count);
+    this.interactionRadius = opts.interactionRadius;
+    this.stiffness = opts.stiffness;
+    this.stiffnessNear = opts.stiffnessNear;
+    this.restDensity = opts.restDensity;
+    this.gravity = opts.gravity;
+    this.randomMotion = opts.randomMotion;
   }
 
   init() {
 
+    const count = this.count;
+    const width = this.canvasEl.width;
+    const height = this.canvasEl.height;
+
     // Init WebGL.
-    const gl = this.canvasEl.getContext('webgl', { depth: false, alpha: true });
+    // NOTE: Alpha not supported by Safari?
+    const gl = this.canvasEl.getContext('webgl', { depth: false, alpha: false });
     if (gl === null) {
       throw new Error('Unable to initialize WebGL.');
     }
     this._gl = gl;
 
+    // Particle properties.
+    this.xy = new Float32Array(count * 2);
+    this.vxy = new Float32Array(count * 2);
+    this.xyOld = new Float32Array(count * 2);
+
+    // Other properties to speed up access.
+    this.g = new Float32Array(count);
+    this.neighbours = new Uint32Array(count);
+    this.len = new Float32Array(count);
+
     // Clear canvas.
     gl.disable(gl.DEPTH_TEST);  // Don't need this, we're not in 3D.
-    gl.enable(gl.BLEND);
-    gl.blendEquation(gl.FUNC_ADD);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-    // Create shader programs.
+    // Create pass 1 program.
     this._pass1Program = this._loadProgram(Liquid.PASS1_VERT, Liquid.PASS1_FRAG);
+    this._pass1UPointsize = gl.getUniformLocation(this._pass1Program, 'u_pointsize');
+    this._pass1USize = gl.getUniformLocation(this._pass1Program, 'u_size');
+    this._pass1APos = gl.getAttribLocation(this._pass1Program, 'a_pos');
+
+    // Create pass 2 program.
     this._pass2Program = this._loadProgram(Liquid.PASS2_VERT, Liquid.PASS2_FRAG);
+    this._pass2USize = gl.getUniformLocation(this._pass2Program, 'u_size');
+    this._pass2UState = gl.getUniformLocation(this._pass2Program, 'u_state');
+    this._pass2AQuad = gl.getAttribLocation(this._pass2Program, 'a_quad');
 
     // Create buffers.
     this._quadBuffer = this._createBuffer(new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
 
     // Create textures.
-    this._midTexture = this._createTexture(this.width, this.height, null);
+    this._midTexture = this._createTexture(width, height, null);
 
     // Create framebuffers.
     this._midFramebuffer = gl.createFramebuffer();
@@ -62,29 +87,61 @@ class Liquid {
   }
 
   /**
-   * Resets all particle positions.
+   * Frees all resources.
+   * @returns {Gol} - self.
    */
-  resetParticles() {
+  destroy() {
 
-    for (let i = 0; i < this.count; i += 1) {
-
-      // Set random positions of particle inside container.
-      this.xy[i * 2] = Math.random() * this.canvasEl.width;
-      this.xy[(i * 2) + 1] = Math.random() * this.canvasEl.height;
-
-      // Set 0 velocity.
-      this.vxy[i * 2] = 0;
-      this.vxy[(i * 2) + 1] = 0;
+    // Free all WebGL resources.
+    const gl = this._gl;
+    gl.useProgram(null);
+    if (this._pass1Program) {
+      gl.deleteProgram(this._pass1Program);
     }
+    if (this._pass2Program) {
+      gl.deleteProgram(this._pass2Program);
+    }
+    if (this._midFramebuffer) {
+      gl.deleteFramebuffer(this._midFramebuffer);
+    }
+    if (this._quadBuffer) {
+      gl.deleteBuffer(this._quadBuffer);
+    }
+    if (this._midTexture) {
+      gl.deleteTexture(this._midTexture);
+    }
+    this._gl = null;
+
+    // Free particle stuff.
+    this.xy = null;
+    this.vxy = null;
+    this.xyOld = null;
+    this.g = null;
+    this.neighbours = null;
+    this.len = null;
 
     return this;
   }
 
   /**
-   * Unloads WebGL and frees up assets.
+   * Resets all particle positions.
    */
-  destroy() {
+  resetParticles() {
 
+    const count = this.count;
+    const width = this.canvasEl.width;
+    const height = this.canvasEl.height;
+
+    for (let i = 0; i < count; i += 1) {
+
+      // Set random positions of particle inside container.
+      this.xy[i * 2] = Math.random() * width;
+      this.xy[(i * 2) + 1] = Math.random() * height;
+
+      // Set 0 velocity.
+      this.vxy[i * 2] = 0;
+      this.vxy[(i * 2) + 1] = 0;
+    }
 
     return this;
   }
@@ -169,21 +226,23 @@ class Liquid {
    */
   draw() {
     const gl = this._gl;
-    
-    const RADIUS = 50;
+    const count = this.count;
+    const width = this.canvasEl.width;
+    const height = this.canvasEl.height;
 
-    // PASS 1.
+    /*
+      PASS 1.
+    */
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, this._midFramebuffer);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._midTexture, 0);
-    gl.viewport(0, 0, this.width, this.height);
+    gl.viewport(0, 0, width, height);
     gl.useProgram(this._pass1Program);
 
     // Set uniforms.
-    const uPointSizeLocation = gl.getUniformLocation(this._pass1Program, 'u_pointsize');
-    gl.uniform1f(uPointSizeLocation, RADIUS);
-    const uSizeLocation = gl.getUniformLocation(this._pass1Program, 'u_size');
-    gl.uniform2f(uSizeLocation, this.width, this.height);
+    const RADIUS = 50;
+    gl.uniform1f(this._pass1UPointsize, RADIUS);
+    gl.uniform2f(this._pass1USize, width, height);
 
     // Create buffer.
     const buffer = gl.createBuffer();
@@ -191,59 +250,48 @@ class Liquid {
     gl.bufferData(gl.ARRAY_BUFFER, this.xy, gl.STATIC_DRAW);
 
     // Bind vertex data.
-    const aVertexPosition = gl.getAttribLocation(this._pass1Program, 'a_pos');
-    gl.enableVertexAttribArray(aVertexPosition);
-    gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
-
-    // Create buffer.
-    const bufferVelocity = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufferVelocity);
-    gl.bufferData(gl.ARRAY_BUFFER, this.vxy, gl.STATIC_DRAW);
-
-    // Bind velocity data.
-    const aVelocityPosition = gl.getAttribLocation(this._pass1Program, 'a_vel');
-    gl.enableVertexAttribArray(aVelocityPosition);
-    gl.vertexAttribPointer(aVelocityPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(this._pass1APos);
+    gl.vertexAttribPointer(this._pass1APos, 2, gl.FLOAT, false, 0, 0);
 
     // Clear.
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Blend func.
+    gl.enable(gl.BLEND);
+    gl.blendEquation(gl.FUNC_ADD);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
     // Draw points.
-    gl.drawArrays(gl.POINTS, 0, this.count);
+    gl.drawArrays(gl.POINTS, 0, count);
 
-
-
-    // PASS 2.
+    /*
+      PASS 2.
+    */
     
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.useProgram(this._pass2Program);
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this._midTexture);
-    gl.viewport(0, 0, this.width, this.height);
+    gl.viewport(0, 0, width, height);
 
     // Set uniforms.
-    const uSizeLocation2 = gl.getUniformLocation(this._pass2Program, 'size');
-    gl.uniform2f(uSizeLocation2, this.width, this.height);
-    const uStateLocation = gl.getUniformLocation(this._pass2Program, 'state');
-    gl.uniform1i(uStateLocation, 0);
+    gl.uniform2f(this._pass2USize, width, height);
+    gl.uniform1i(this._pass2UState, 0);
 
     // Bind vertex data.
     gl.bindBuffer(gl.ARRAY_BUFFER, this._quadBuffer);
-    const aVertexPosition2 = gl.getAttribLocation(this._pass2Program, 'quad');
-    gl.enableVertexAttribArray(aVertexPosition2);
-    gl.vertexAttribPointer(aVertexPosition2, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(this._pass2AQuad);
+    gl.vertexAttribPointer(this._pass2AQuad, 2, gl.FLOAT, false, 0, 0);
 
-    // Blend func.
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    // Don't need blend anymore.
+    gl.disable(gl.BLEND);
 
     // Draw quad.
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
+    return this;
   }
 
   /**
@@ -253,7 +301,7 @@ class Liquid {
 
     // Check if updating.
     if (!dT) {
-      return;
+      return this;
     }
 
     // Make sure dT isn't too large, or the physics breaks down.
@@ -261,13 +309,14 @@ class Liquid {
       dT = 0.02;
     }
 
-    const INTERACTION_RADIUS = 50.0;
+    // Get properties.
+    const INTERACTION_RADIUS = this.interactionRadius;
     const INTERACTION_RADIUS_SQ = INTERACTION_RADIUS * INTERACTION_RADIUS;
-    const STIFFNESS = 10000.0;  // Attraction.
-    const STIFFNESS_NEAR = 10000.0;  // Spread.
-    const REST_DENSITY = 2.0;  // Attraction when idle.
-    const GRAVITY = 1000;
-    const RANDOM_MOTION = 20.0;
+    const STIFFNESS = this.stiffness;  // Attraction.
+    const STIFFNESS_NEAR = this.stiffnessNear;  // Spread.
+    const REST_DENSITY = this.restDensity;  // Attraction when idle.
+    const GRAVITY = this.gravity;
+    const RANDOM_MOTION = this.randomMotion;
 
     const count = this.count;
     const width = this.canvasEl.width;
@@ -278,20 +327,18 @@ class Liquid {
     // Pass 1.
     for (let i = 0; i < count * 2; i += 1) {
 
-      // Update old positions.
-      this.xyOld[i] = this.xy[i];
-
       // Apply random motion.
       if (RANDOM_MOTION) {
         this.vxy[i] += (Math.random() - 0.5) * RANDOM_MOTION * dT * 2;
       }
 
-      // Apply gravity to Y axis.
+      // Apply acceleration.
       if (GRAVITY && i % 2 > 0) {
         this.vxy[i] += GRAVITY * dT;
       }
 
       // Update positions.
+      this.xyOld[i] = this.xy[i];
       this.xy[i] += this.vxy[i] * dT;
     }
 
@@ -328,6 +375,7 @@ class Liquid {
         // TODO: https://www.h3xed.com/programming/fast-unit-vector-calculation-for-2d-games
 
         // Get gradient.
+        // NOTE: Sometimes gived NaN, why?
         const len = Math.sqrt(sq);
         const g = 1 - (len / INTERACTION_RADIUS);
         if (g === 0 || Number.isNaN(g)) {
@@ -394,6 +442,7 @@ class Liquid {
       this.vxy[iy] = (this.xy[iy] - this.xyOld[iy]) * dTInv;
     }
 
+    return this;
   }
 }
 
@@ -408,35 +457,34 @@ precision mediump float;
 uniform float u_pointsize;
 uniform vec2 u_size;
 attribute vec2 a_pos;
-attribute vec2 a_vel;
-
-varying float speed;
 
 void main() {
 
   gl_PointSize = u_pointsize;
-  gl_Position = vec4(((a_pos / u_size) - 0.5) * vec2(2, -2), 0.0, 1.0);
 
-  speed = length(a_vel);
+  // Reposition to default coordinates (-0.5, 0.5).
+  gl_Position = vec4(((a_pos / u_size) - 0.5) * vec2(2, -2), 0.0, 1.0);
 }`;
 
 Liquid.PASS1_FRAG = `#ifdef GL_ES
 precision mediump float;
 #endif
 
-varying float speed;
-
 void main() {
 
   vec2 point = gl_PointCoord.xy - 0.5;
-  float dist = length(point);
 
-  // Fast square.
-  if (dist > 0.5) {
-    discard;
+  // Check square distance.
+  float dist = (point.x * point.x) + (point.y * point.y);
+  if (dist > 0.25) {
+
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+
+  } else {
+
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0 - (sqrt(dist) * 2.0));
+
   }
-
-  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0 - (dist * 2.0));
 }`;
 
 /*
@@ -447,30 +495,41 @@ Liquid.PASS2_VERT = `#ifdef GL_ES
 precision mediump float;
 #endif
 
-attribute vec2 quad;
+attribute vec2 a_quad;
 
 void main() {
-  gl_Position = vec4(quad, 0, 1.0);
+  gl_Position = vec4(a_quad, 0, 1.0);
 }`;
 
 Liquid.PASS2_FRAG =  `#ifdef GL_ES
 precision mediump float;
 #endif
 
-uniform sampler2D state;
-uniform vec2 size;
+uniform sampler2D u_state;
+uniform vec2 u_size;
 
 void main() {
 
-  vec4 color = texture2D(state, gl_FragCoord.xy / size);
+  vec4 color = texture2D(u_state, gl_FragCoord.xy / u_size);
   if (color.a < 0.5) {
-    discard;
-  }
 
-  if (color.a > 0.6) {
-    gl_FragColor = vec4(0.0, 0.4, 1.0, 0.1);
+    // Discard.
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+
+  } else if (color.a < 0.6) {
+
+    // Outer border.
+    gl_FragColor = vec4(0.0, 0.4, 1.0, 1.0);
+
+  } else if (color.a < 0.7) {
+
+    // Inner border.
+    gl_FragColor = vec4(0.0, 0.3, 0.9, 1.0);
+
   } else {
-    gl_FragColor = vec4(0.0, 0.4, 1.0, 0.6);
+
+    // Inner blue.
+    gl_FragColor = vec4(0.0, 0.2, 0.8, 1.0);
+
   }
-  
 }`;

@@ -94,8 +94,8 @@ class Liquid {
     for (let i = 0; i < this.count; i += 1) {
 
       // Set random positions of particle inside container.
-      this.xy[i * 2] = Math.random() * this.canvasEl.width;
-      this.xy[(i * 2) + 1] = Math.random() * this.canvasEl.height;
+      this.xy[i * 2] = ((Math.random() * 0.5) + 0.25) * this.canvasEl.width;
+      this.xy[(i * 2) + 1] = (Math.random() * 0.5) * this.canvasEl.height;
 
       // Set 0 velocity.
       this.vxy[i * 2] = 0;
@@ -110,7 +110,7 @@ class Liquid {
    */
   addForceAt(xx, yy, force) {
 
-    const INTERACTION_RADIUS = 50;
+    const INTERACTION_RADIUS = 100;
     const INTERACTION_RADIUS_SQ = INTERACTION_RADIUS * INTERACTION_RADIUS;
 
     for (let i = 0; i < this.count; i += 1) {
@@ -335,9 +335,9 @@ class Liquid {
 
     const INTERACTION_RADIUS = 50.0;
     const INTERACTION_RADIUS_SQ = INTERACTION_RADIUS * INTERACTION_RADIUS;
-    const STIFFNESS = 100.0;  // Attraction.
+    const STIFFNESS = 10000.0;  // Attraction.
     const STIFFNESS_NEAR = 10000.0;  // Spread.
-    const REST_DENSITY = 1.0;  // Attraction when idle.
+    const REST_DENSITY = 2.0;  // Attraction when idle.
     const GRAVITY = 1000;
     const RANDOM_MOTION = 20.0;
 
@@ -457,6 +457,19 @@ class Liquid {
         this.xy[iy] = 0; 
       } else if (y > height) {
         this.xy[iy] = height;
+      }
+
+      // Triangles.
+      const halfH = height;
+      if (y < 256) {
+        if (x + (height - y) < 730) {
+          this.xy[ix] += 1;
+          this.xy[iy] -= 1;
+        }
+        if ((width - x) + (height - y) < 730) {
+          this.xy[ix] -= 1;
+          this.xy[iy] -= 1;
+        }
       }
 
       // Calculate new velocity.

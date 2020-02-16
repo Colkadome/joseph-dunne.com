@@ -6,6 +6,9 @@
   image-rendering: pixelated;
   border: 1px dashed currentColor;
   cursor: none;
+  background: url('https://upload.wikimedia.org/wikipedia/commons/e/e5/Extinction_Symbol.svg');
+  background-size: cover;
+  background-position: center;
 }
 .liquid-canvas.full {
   border: none;

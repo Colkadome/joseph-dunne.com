@@ -146,7 +146,7 @@ class _Graphics {
     this.imageMap.set(src, null);
   }
 
-  drawTileLazy(src, x, y) {
+  drawTileLazy(src, x, y, w, h) {
     const texture = this.imageMap.get(src);
     if (texture !== undefined) {
       if (texture !== null) {
@@ -162,8 +162,8 @@ class _Graphics {
 
         // Uniforms.
         gl.uniform2f(this._tileProgram_UCanvas, this.canvasEl.width, this.canvasEl.height);
-        gl.uniform2f(this._tileProgram_UPos, x, y);
-        gl.uniform2f(this._tileProgram_USize, 1, 1);
+        gl.uniform2f(this._tileProgram_UPos, Math.round(x), Math.round(y));
+        gl.uniform2f(this._tileProgram_USize, w, h);
         gl.uniform1i(this._tileProgram_UTex, 0);
 
         // Attributes.
@@ -202,12 +202,10 @@ uniform vec2 u_canvas;
 uniform vec2 u_pos;
 uniform vec2 u_size;
 
-float TILE_SIZE = 16.0;
-
 void main() {
 
   // Transformations.
-  vec2 scale = (TILE_SIZE * 2.0) / u_canvas;
+  vec2 scale = 2.0 / u_canvas;
   vec2 transform = vec2(-1.0, -1.0);
 
   // Tile coordinates.
@@ -224,12 +222,11 @@ precision mediump float;
 #endif
 
 uniform sampler2D u_tex;
+uniform vec2 u_pos;
 uniform vec2 u_size;
-
-float TILE_SIZE = 16.0;
 
 void main() {
   
-  gl_FragColor = texture2D(u_tex, gl_FragCoord.xy / (u_size * TILE_SIZE));
+  gl_FragColor = texture2D(u_tex, (gl_FragCoord.xy - u_pos) / u_size);
 
 }`;

@@ -68,8 +68,7 @@ window.addEventListener('load', function () {
 
   // Add listeners.
 
-  controlEl.addEventListener('click', function (event) {
-    event.preventDefault();
+  controlEl.addEventListener('mousedown', function (event) {
     pauseTextEl.innerText = 'Click to Continue';
     sound.init();  // Sound only allowed after user interaction.
   });

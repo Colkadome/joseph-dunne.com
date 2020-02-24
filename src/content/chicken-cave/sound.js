@@ -8,7 +8,6 @@ class _Sound {
   constructor() {
     this.audioContext = null;
     this.buffers = new Map();
-    this._memoize = {};
   }
 
   init() {
@@ -19,11 +18,51 @@ class _Sound {
     return this;
   }
 
-  _playBuffer(buffer) {
+  _playBuffer(buffer, opts) {
+    opts = {
+      pan: 0,
+      gain: 1,
+      loop: false,
+      loopStart: 0,
+      loopEnd: 0,
+      start: 0,
+      playbackRate: 1,
+      ...opts,
+    };
+
+    console.log(opts);
+
+    // A gain of 0 means no volume.
+    if (opts.gain === 0) {
+      return;
+    }
+
     const source = this.audioContext.createBufferSource();
     source.buffer = buffer;
-    source.connect(this.audioContext.destination);
-    source.start(0);
+    let node = source;
+
+    if (opts.gain != null) {
+      const gainNode = this.audioContext.createGain();
+      gainNode.gain.value = opts.gain;
+      node.connect(gainNode);
+      node = gainNode;
+    }
+
+    if (opts.pan) {
+      const panNode = this.audioContext.createStereoPanner();
+      panNode.pan.value = opts.pan;
+      node.connect(panNode);
+      node = panNode;
+    }
+
+    node.connect(this.audioContext.destination);
+    source.loop = opts.loop;
+    source.loopStart = opts.loopStart;
+    source.loopEnd = opts.loopEnd;
+    source.playbackRate.value = opts.playbackRate;
+    source.start(opts.start);
+
+    return source;
   }
 
   loadSound(url) {
@@ -43,21 +82,21 @@ class _Sound {
     }
   }
 
-  playSound(url) {
+  playSound(url, opts) {
     if (this.audioContext != null) {
       const buffer = this.buffers.get(url);
       if (buffer != null) {
-        this._playBuffer(buffer);
+        this._playBuffer(buffer, opts);
       }
     }
   }
 
-  playSoundLazy(url) {
+  playSoundLazy(url, opts) {
     if (this.audioContext != null) {
       if (this.buffers.has(url)) {
-        return this.playSound(url);
+        return this.playSound(url, opts);
       } else {
-        return this.loadSound(url).then(() => this.playSound(url));
+        return this.loadSound(url).then(() => this.playSound(url, opts));
       }
     }
   }

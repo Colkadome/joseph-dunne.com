@@ -62,7 +62,7 @@ class _Player {
 
     // Check for collisions.
     // TODO: Do this by gathering up all the blocks that collide with the object.
-    // The collision with the most crossover area will go first, then the others.
+    // The collision with the most crossover area will go first, then the others?
     for (let obj of this.entities.blocker) {
 
       const xC = this.x < (obj.x + obj.w) && (this.x + this.w) > obj.x;

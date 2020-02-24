@@ -25,6 +25,9 @@ class _Game {
       blocker: new Set(),
 
     };
+
+    // Other stuff.
+    this.eT = 0;  // Total elapsed time since init.
   }
 
   addObject(obj) {
@@ -89,6 +92,8 @@ class _Game {
     if (dT > 0.02) {
       dT = 0.02;
     }
+
+    this.eT += dT;
 
     for (let obj of this.entities.update) {
       obj.update(dT);

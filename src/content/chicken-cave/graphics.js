@@ -5,14 +5,14 @@
 
 class _Graphics {
 
-  constructor(canvasEl) {
+  constructor(canvasEl, opts) {
 
     this.canvasEl = canvasEl;
-    this._gl = null;
+    this._logger = (opts && opts.logger) || null;
 
+    this._gl = null;
     this.cameraX = 0;
     this.cameraY = 0;
-
     this.imageMap = new Map();
   }
 
@@ -167,9 +167,14 @@ class _Graphics {
       const imgData = ctx.getImageData(0, 0, img.width, img.height).data;
       const texture = this._createTexture(img.width, img.height, imgData);
       this.imageMap.set(src, texture);
+      if (this._logger) {
+        this._logger('Loaded image:', src);
+      }
     };
     img.onerror = () => {
-      console.log(`Error loading image: ${src}`);
+      if (this._logger) {
+        this._logger('Error loading image:', src);
+      }
     };
     img.src = src;
 

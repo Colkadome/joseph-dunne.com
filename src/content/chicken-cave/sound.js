@@ -5,7 +5,9 @@
 
 class _Sound {
 
-  constructor() {
+  constructor(opts) {
+    this._logger = (opts && opts.logger) || null;
+
     this.audioContext = null;
     this.buffers = new Map();
   }
@@ -75,11 +77,15 @@ class _Sound {
         .then(arrayBuffer => this.audioContext.decodeAudioData(arrayBuffer))
         .then(audioBuffer => {
           this.buffers.set(url, audioBuffer);
-          console.log('Loaded sound:', url);
+          if (this._logger) {
+            this._logger('Loaded sound:', url);
+          }
         })
         .catch(err => {
           this.buffers.set(url, null);  // Mark the URL as failed.
-          console.log('Failed to load sound:', url, err.message);
+          if (this._logger) {
+            this._logger('Error loading sound:', url, err.message);
+          }
         });
     }
   }

@@ -33,10 +33,13 @@ window.addEventListener('load', function () {
     throw new Error('text element not found.');
   }
 
+  // Logger. For debug only.
+  const logger = console.log;
+
   // Init services.
   const keyboard = new _Keyboard(controlEl);
-  const graphics = new _Graphics(canvasEl);
-  const sound = new _Sound();
+  const graphics = new _Graphics(canvasEl, { logger });
+  const sound = new _Sound({ logger });
   keyboard.init();
   graphics.init();
   //sound.init();  Sound only allowed after user interaction.

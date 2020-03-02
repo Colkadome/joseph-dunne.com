@@ -110,7 +110,15 @@ class Liquid {
     if (this._midTexture) {
       gl.deleteTexture(this._midTexture);
     }
-    this._gl = null;
+
+    gl.canvas.width = 1;
+    gl.canvas.height = 1;
+
+    // Lose the context, if supported.
+    const loseContextObj = gl.getExtension('WEBGL_lose_context');
+    if (loseContextObj) {
+      loseContextObj.loseContext();
+    }
 
     // Free particle stuff.
     this.xy = null;
@@ -119,6 +127,7 @@ class Liquid {
     this.g = null;
     this.neighbours = null;
     this.len = null;
+    this._gl = null;
 
     return this;
   }

@@ -52,4 +52,8 @@ window.addEventListener('load', function () {
     canvasEl.classList.toggle('full');
   });
 
+  window.addEventListener('unload', function(event) {
+    liquid.destroy();
+  });
+
 });

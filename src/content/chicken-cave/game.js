@@ -23,6 +23,7 @@ class _Game {
 
       // Other.
       blocker: new Set(),
+      wall: new Set(),
 
     };
 
@@ -32,15 +33,21 @@ class _Game {
 
   addObject(obj) {
 
-    this.entities.all.add(obj);
-    for (let type of obj.types) {
-      this.entities[type].add(obj);
-    }
-
+    // Add systems.
     obj.entities = this.entities;
     obj.keyboard = this.keyboard;
     obj.graphics = this.graphics;
     obj.sound = this.sound;
+
+    // Add to entities.
+    this.entities.all.add(obj);
+    for (let type of obj.types) {
+      if (this.entities[type]) {
+        this.entities[type].add(obj);
+      }
+    }
+
+    // Init.
     obj.init();
 
     return this;
@@ -48,16 +55,22 @@ class _Game {
 
   deleteObject(obj) {
 
-    this.entities.all.delete(obj);
-    for (let type of obj.types) {
-      this.entities[type].delete(obj);
-    }
-
+    // Destroy.
     obj.destroy();
+
+    // Remove systems.
     obj.entities = null;
     obj.keyboard = null;
     obj.graphics = null;
     obj.sound = null;
+
+    // Remove from entities.
+    this.entities.all.delete(obj);
+    for (let type of obj.types) {
+      if (this.entities[type]) {
+        this.entities[type].delete(obj);
+      }
+    }
 
     return this;
   }
@@ -67,11 +80,13 @@ class _Game {
     // Init the first scene.
     this.addObject(new _Player(16, 16));
 
-    this.addObject(new _Wall(0, 0));
-    this.addObject(new _Wall(16, 0));
-    this.addObject(new _Wall(32, 0));
+    this.addObject(new _LevelWalls(64, 64));
 
     return this;
+  }
+
+  destroy() {
+    
   }
 
   draw() {

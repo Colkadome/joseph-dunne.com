@@ -86,4 +86,11 @@ window.addEventListener('load', function () {
     lastTime = null;
   });
 
+  window.addEventListener('unload', function(event) {
+
+    sound.destroy();
+    graphics.destroy();
+
+  });
+
 });

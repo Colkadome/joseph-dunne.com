@@ -18,6 +18,10 @@ class _Sound {
     return this;
   }
 
+  destroy() {
+
+  }
+
   _playBuffer(buffer, opts) {
     opts = {
       pan: 0,
@@ -29,8 +33,6 @@ class _Sound {
       playbackRate: 1,
       ...opts,
     };
-
-    console.log(opts);
 
     // A gain of 0 means no volume.
     if (opts.gain === 0) {

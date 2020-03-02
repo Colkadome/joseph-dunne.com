@@ -11,10 +11,9 @@ class _Player {
 
     this.x = x || 0;
     this.y = y || 0;
-    this.w = 32;
-    this.h = 16;
     this.vx = 0;
     this.vy = 0;
+    this.direction = 1;
     this.grounded = true;
 
   }
@@ -29,10 +28,19 @@ class _Player {
 
   draw() {
 
-
-    this.graphics.drawTileLazy('./assets/img/wall.png', this.x, this.y, this.w, this.h);
-
+    this.graphics.drawTileLazy('./assets/img/player.png',
+      this.direction < 0 ? this.x + 12 : this.x,
+      this.y,
+      this.direction < 0 ? -12 : 12,
+      14
+    );
     
+  }
+
+  jumpSound() {
+
+    this.sound.playSoundLazy('./assets/wav/intro.wav');
+
   }
 
   update(dT) {
@@ -40,17 +48,19 @@ class _Player {
     // Check movement.
     if (this.keyboard.keyIsHeld('arrowright')) {
       this.vx = 64;
+      this.direction = 1;
     } else if (this.keyboard.keyIsHeld('arrowleft')) {
       this.vx = -64;
+      this.direction = -1;
     } else {
       this.vx = 0;
     }
 
     // Check for jump.
     if (this.grounded) {
-      if (this.keyboard.keyIsDown('arrowup')) {
+      if (this.keyboard.keyIsDown('z')) {
         this.vy = 128;
-        this.grounded = false;
+        this.jumpSound();
       }
     } else if (this.vy > -512) {
       this.vy -= 256 * dT;
@@ -59,6 +69,33 @@ class _Player {
     // Update positions.
     this.x += this.vx * dT;
     this.y += this.vy * dT;
+
+    //this.graphics.cameraX += this.vx * dT;
+    //this.graphics.cameraY += this.vy * dT;
+
+    this.grounded = false;
+
+    // Check for boundary collisions.
+    if (this.x < 0) {
+      this.x = 0;
+      this.vx = 0;
+    }
+    if (this.y < 0) {
+      this.y = 0;
+      this.vy = 0;
+    }
+
+    // Check for wall collisions.
+    // TODO: Fix this.
+    for (let obj of this.entities.wall) {
+
+      const force = obj.getWallsAt(this.x, this.y, 12, 14);
+
+      if (force[1] > 0) {
+        this.vy = 0;
+        this.grounded = true;
+      }
+    }
 
     // Check for collisions.
     // TODO: Do this by gathering up all the blocks that collide with the object.

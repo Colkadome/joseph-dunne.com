@@ -79,8 +79,6 @@ class _Game {
 
     // Init the first scene.
     this.addObject(new _Player(16, 16));
-    //this.addObject(new _Player(32, 16));
-
     this.addObject(new _LevelWalls(64, 64));
 
     return this;

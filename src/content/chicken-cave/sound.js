@@ -10,6 +10,7 @@ class _Sound {
 
     this.audioContext = null;
     this.buffers = new Map();
+    this._soundsStarted = new Set();
   }
 
   init() {
@@ -21,7 +22,12 @@ class _Sound {
   }
 
   destroy() {
+    this.buffers.clear();
+    this._soundsStarted.clear();
+  }
 
+  _tick() {
+    this._soundsStarted.clear();
   }
 
   _playBuffer(buffer, opts) {
@@ -70,6 +76,7 @@ class _Sound {
   }
 
   loadSound(url) {
+    this.buffers.set(url, null);  // Mark the URL as loading.
     if (this.audioContext != null) {
       // TODO: Memoize loading sound here.
       return fetch(url)
@@ -82,7 +89,7 @@ class _Sound {
           }
         })
         .catch(err => {
-          this.buffers.set(url, null);  // Mark the URL as failed.
+          //this.buffers.set(url, null);  // Mark the URL as failed.
           if (this._logger) {
             this._logger('Error loading sound:', url, err.message);
           }
@@ -94,7 +101,12 @@ class _Sound {
     if (this.audioContext != null) {
       const buffer = this.buffers.get(url);
       if (buffer != null) {
-        this._playBuffer(buffer, opts);
+
+        // Prevent same sound playing on the same frame.
+        if (!this._soundsStarted.has(url)) {
+          this._playBuffer(buffer, opts);
+          this._soundsStarted.add(url);
+        }
       }
     }
   }

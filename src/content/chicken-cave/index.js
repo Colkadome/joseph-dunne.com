@@ -60,8 +60,9 @@ window.addEventListener('load', function () {
         game.update((ts - lastTime) * 0.001);
         game.draw();
 
-        // Update keys.
+        // Update systems.
         keyboard._tick();
+        sound._tick();
 
       }
       lastTime = ts;

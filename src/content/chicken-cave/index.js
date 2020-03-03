@@ -91,10 +91,8 @@ window.addEventListener('load', function () {
   });
 
   window.addEventListener('unload', function(event) {
-
     sound.destroy();
     graphics.destroy();
-
   });
 
 });

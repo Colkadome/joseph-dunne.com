@@ -37,7 +37,7 @@ class _Player {
     
   }
 
-  jumpSound() {
+  playJumpSound() {
 
     this.sound.playSoundLazy('./assets/wav/intro.wav');
 
@@ -45,7 +45,10 @@ class _Player {
 
   update(dT) {
 
-    // Check movement.
+    //this.graphics.cameraX += this.vx * dT;
+    //this.graphics.cameraY += this.vy * dT;
+
+    // Check movement. We want to do this before updating 'x' and 'y' for responsiveness.
     if (this.keyboard.keyIsHeld('arrowright')) {
       this.vx = 64;
       this.direction = 1;
@@ -60,18 +63,16 @@ class _Player {
     if (this.grounded) {
       if (this.keyboard.keyIsDown('z')) {
         this.vy = 128;
-        this.jumpSound();
+        this.playJumpSound();
       }
-    } else if (this.vy > -512) {
+    }
+    if (this.vy > -512) {
       this.vy -= 256 * dT;
     }
 
     // Update positions.
-    this.x += this.vx * dT;
-    this.y += this.vy * dT;
-
-    //this.graphics.cameraX += this.vx * dT;
-    //this.graphics.cameraY += this.vy * dT;
+    let dx = this.vx * dT;
+    let dy = this.vy * dT;
 
     this.grounded = false;
 
@@ -84,34 +85,38 @@ class _Player {
       this.y = 0;
       this.vy = 0;
     }
+    if (this.y <= 0) {
+      this.grounded = true;
+    }
 
     // Check for wall collisions.
     // TODO: Fix this.
-    for (let obj of this.entities.wall) {
+    if (dx || dy) {
+      for (let obj of this.entities.wall) {
 
-      const force = obj.getWallsAt(this.x, this.y, 12, 14);
+        const chickenSize = 12;
+        const result = obj.getCollisionAt(this.x + dx, this.y + dy, chickenSize, chickenSize, dx, dy);
 
-      if (force[1] > 0) {
-        this.vy = 0;
-        this.grounded = true;
+        // TODO: Return an X and Y to snap to.
+
+        if ((result & 0b01) > 0) {
+          this.vx = 0;
+          dx = 0;
+        }
+        if ((result & 0b10) > 0) {
+          if (this.vy < 0) {
+            this.grounded = true;
+          }
+          this.vy = 0;
+          dy = 0;
+        }
+        
       }
     }
 
-    // Check for collisions.
-    // TODO: Do this by gathering up all the blocks that collide with the object.
-    // The collision with the most crossover area will go first, then the others?
-    for (let obj of this.entities.blocker) {
-
-      const xC = this.x < (obj.x + obj.w) && (this.x + this.w) > obj.x;
-      const yC = this.y < (obj.y + obj.h) && (this.y + this.h) > obj.y;
-
-      // Check x and y collision. NOTE: collision side will be based on X vs Y amount clipped.
-      if (xC && yC) {
-        this.vy = 0;
-        this.y = obj.y + obj.h;
-        this.grounded = true;
-      }
-    }
+    // Update positions.
+    this.x += dx;
+    this.y += dy;
 
   }
 

@@ -37,6 +37,10 @@ class _LevelWalls {
 
   }
 
+  isWallAt(x, y) {
+    return this.getWallAt(x, y) === 1;
+  }
+
   getWallAt(x, y) {
 
     if (x < 0 || x > this.w - 1 || y < 0 || y > this.h - 1) {
@@ -57,74 +61,79 @@ class _LevelWalls {
     // Get spaces that overlap with (x, y, w, h).
     // We can assume that max 4 spaces will overlap, and that (w, h) is below 16.
 
+    //     (B, B)
+    //
+    // (A, A)
+
     const size = 16;
     const scale = 0.0625;  // (1 / 16), to map coordinates to [x, y] square.
-    const x1 = Math.floor(x * scale);
-    const x2 = Math.floor((x + w) * scale);
-    const y1 = Math.floor(y * scale);
-    const y2 = Math.floor((y + h) * scale);
 
-    // We want to nudge 'x' and 'y' back by 'dx' and 'dy' until it doesn't hit anything.
+    const xA1 = Math.floor(x * scale);
+    const xA2 = Math.floor((x + dx) * scale);
 
-    const dl = this.getWallAt(); this.walls[(y1 * this.w) + x1] === 1;
-    const dr = this.walls[(y1 * this.w) + x2] === 1;
-    const ul = this.walls[(y2 * this.w) + x1] === 1;
-    const ur = this.walls[(y2 * this.w) + x2] === 1;
+    const xB1 = Math.floor((x + w) * scale);
+    const xB2 = Math.floor((x + w + dx) * scale);
 
-    const collisionCount = (
-      this.getWallAt(x1, y1) === 1 ? 1 : 0
-      + this.getWallAt(x2, y1) === 1 ? 1 : 0
-      + this.getWallAt(x1, y2) === 1 ? 1 : 0
-      + this.getWallAt(x2, y2) === 1 ? 1 : 0
-    );
+    const yA1 = Math.floor(y * scale);
+    const yA2 = Math.floor((y + dy) * scale);
 
-    let result = 0;
+    const yB1 = Math.floor((y + h) * scale);
+    const yB2 = Math.floor((y + h + dy) * scale);
 
-    if (collisionCount > 0) {
+    let xMoved = false;
+    let yMoved = false;
 
-      // Try and nudge horizontally.
-      const xx1 = Math.floor((x - dx) * scale);
-      const xx2 = Math.floor((x - dx + w) * scale);
-      const xCount = (
-        this.getWallAt(xx1, y1) === 1 ? 1 : 0
-        + this.getWallAt(xx2, y1) === 1 ? 1 : 0
-        + this.getWallAt(xx1, y2) === 1 ? 1 : 0
-        + this.getWallAt(xx2, y2) === 1 ? 1 : 0
-      );
-      if (xCount < collisionCount) {
-        result += 0b01;
+    let nextX = null;
+    let nextY = null;
+
+    // Check for X collisions.
+    if (dx < 0 && xA2 < xA1) {
+      xMoved = true;
+      if (this.isWallAt(xA2, yA1) || this.isWallAt(xA2, yB1)) {
+        nextX = xA1 * size;
       }
-
-      // Try and nudge vertically.
-      const yy1 = Math.floor((y - dy) * scale);
-      const yy2 = Math.floor((y - dy + h) * scale);
-      const yCount = (
-        this.getWallAt(x1, yy1) === 1 ? 1 : 0
-        + this.getWallAt(x2, yy1) === 1 ? 1 : 0
-        + this.getWallAt(x1, yy2) === 1 ? 1 : 0
-        + this.getWallAt(x2, yy2) === 1 ? 1 : 0
-      );
-      if (yCount < collisionCount) {
-        result += 0b10;
-      }
-
-      // Try and nudge diagonally, if no collisions found.
-      if (result === 0) {
-
-        const dCount = (
-          this.getWallAt(xx1, yy1) === 1 ? 1 : 0
-          + this.getWallAt(xx2, yy1) === 1 ? 1 : 0
-          + this.getWallAt(xx1, yy2) === 1 ? 1 : 0
-          + this.getWallAt(xx2, yy2) === 1 ? 1 : 0
-        );
-        if (dCount < collisionCount) {
-          result += 0b11;
-        }
-
+    } else if (dx > 0 && xB2 > xB1) {
+      xMoved = true;
+      if (this.isWallAt(xB2, yA1) || this.isWallAt(xB2, yB1)) {
+        nextX = (xA2 * size) - w;
       }
     }
 
-    return result;
+    // Check for Y collisions.
+    if (dy < 0 && yA2 < yA1) {
+      yMoved = true;
+      if (this.isWallAt(xA1, yA2) || this.isWallAt(xB1, yA2)) {
+        nextY = yA1 * size;
+      }
+    } else if (dy > 0 && yB2 > yB1) {
+      yMoved = true;
+      if (this.isWallAt(xA1, yB2) || this.isWallAt(xB1, yB2)) {
+        nextY = (yB2 * size) - h;
+      }
+    }
+
+    // If no collisions, check for corner collision.
+    // We are lazy and checking all corners here.
+    if (xMoved && yMoved && nextX == null && nextY == null) {
+      if (
+        this.isWallAt(xA2, yA2)
+        || this.isWallAt(xB2, yA2)
+        || this.isWallAt(xA2, yB2)
+        || this.isWallAt(xB2, yB2)
+      ) {
+        // We choose Y collision. Is least frustrating to the player.
+        nextY = dy > 0 ? (yB2 * size) - h : yA1 * size;
+      }
+    }
+
+    if (nextX != null || nextY != null) {
+      return {
+        x: nextX,
+        y: nextY,
+      };
+    }
+
+    return null;
   }
 
   draw() {

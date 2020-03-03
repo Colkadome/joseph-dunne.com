@@ -50,10 +50,10 @@ class _Player {
 
     // Check movement. We want to do this before updating 'x' and 'y' for responsiveness.
     if (this.keyboard.keyIsHeld('arrowright')) {
-      this.vx = 64;
+      this.vx = 128;
       this.direction = 1;
     } else if (this.keyboard.keyIsHeld('arrowleft')) {
-      this.vx = -64;
+      this.vx = -128;
       this.direction = -1;
     } else {
       this.vx = 0;
@@ -62,17 +62,13 @@ class _Player {
     // Check for jump.
     if (this.grounded) {
       if (this.keyboard.keyIsDown('z')) {
-        this.vy = 128;
+        this.vy = 256;
         this.playJumpSound();
       }
     }
     if (this.vy > -512) {
       this.vy -= 256 * dT;
     }
-
-    // Update positions.
-    let dx = this.vx * dT;
-    let dy = this.vy * dT;
 
     this.grounded = false;
 
@@ -89,34 +85,37 @@ class _Player {
       this.grounded = true;
     }
 
+    let dx = this.vx * dT;
+    let dy = this.vy * dT;
+
     // Check for wall collisions.
     // TODO: Fix this.
     if (dx || dy) {
       for (let obj of this.entities.wall) {
 
         const chickenSize = 12;
-        const result = obj.getCollisionAt(this.x + dx, this.y + dy, chickenSize, chickenSize, dx, dy);
+        const result = obj.getCollisionAt(this.x, this.y, chickenSize, chickenSize, dx, dy);
 
-        // TODO: Return an X and Y to snap to.
-
-        if ((result & 0b01) > 0) {
-          this.vx = 0;
-          dx = 0;
-        }
-        if ((result & 0b10) > 0) {
-          if (this.vy < 0) {
+        if (result) {
+          if (result.x != null) {
+            dx = 0;
+            this.vx = 0;
+            this.v = result.x;
+          }
+          if (result.y != null) {
+            dy = 0;
+            this.vy = 0;
+            this.y = result.y;
             this.grounded = true;
           }
-          this.vy = 0;
-          dy = 0;
         }
         
       }
+    
+      // Update positions.
+      this.x += dx;
+      this.y += dy;
     }
-
-    // Update positions.
-    this.x += dx;
-    this.y += dy;
 
   }
 

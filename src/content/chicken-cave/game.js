@@ -79,6 +79,15 @@ class _Game {
 
     // Init the first scene.
     this.addObject(new _Player(16, 16));
+
+    /*
+    for (let x = 0; x < 16; x += 1) {
+      for (let y = 0; y < 16; y += 1) {
+        this.addObject(new _Player(x * 16, y * 16));
+      }
+    }
+    */
+
     this.addObject(new _LevelWalls(64, 64));
 
     return this;

@@ -141,18 +141,23 @@ class _LevelWalls {
     const scale = 16;
     const offset = 8;
 
-    for (let y = 0; y < this.h; y += 1) {
-      for (let x = 0; x < this.w; x += 1) {
+    // X and Y range extended by 1 to draw edges.
+    for (let y = -1; y < this.h + 1; y += 1) {
+      for (let x = -1; x < this.w + 1; x += 1) {
+
+        // Check if within boundaries of the grid.
+        const inX = x > -1 && x < this.w;
+        const inY = y > -1 && y < this.h;
 
         const i = (y * this.w) + x;
-        const c = this.walls[i];
+        const c = inX && inY ? this.walls[i] : 1;
 
         if (c === 1) {
 
-          const u = y < this.h - 1 ? this.walls[i + this.w] : 0;
-          const d = y > 0 ? this.walls[i - this.w] : 0;
-          const l = x > 0 ? this.walls[i - 1] : 0;
-          const r = x < this.w - 1 ? this.walls[i + 1] : 0;
+          const u = inX && y < this.h - 1 ? this.walls[i + this.w] : 1;
+          const d = inX && y > 0 ? this.walls[i - this.w] : 1;
+          const l = inY && x > 0 ? this.walls[i - 1] : 1;
+          const r = inY && x < this.w - 1 ? this.walls[i + 1] : 1;
 
           this.graphics.drawTileLazy(
             './assets/img/wall-1.png',

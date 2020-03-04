@@ -45,9 +45,6 @@ class _Player {
 
   update(dT) {
 
-    //this.graphics.cameraX += this.vx * dT;
-    //this.graphics.cameraY += this.vy * dT;
-
     // Check movement. We want to do this before updating 'x' and 'y' for responsiveness.
     if (this.keyboard.keyIsHeld('arrowright')) {
       this.vx = 128;
@@ -73,23 +70,23 @@ class _Player {
     this.grounded = false;
 
     // Check for boundary collisions.
-    if (this.x < 0) {
-      this.x = 0;
-      this.vx = 0;
-    }
-    if (this.y < 0) {
-      this.y = 0;
-      this.vy = 0;
-    }
-    if (this.y <= 0) {
-      this.grounded = true;
-    }
 
     let dx = this.vx * dT;
     let dy = this.vy * dT;
 
+    if (this.x + dx < 0) {
+      this.x = 0;
+      this.vx = 0;
+      dx = 0;
+    }
+    if (this.y + dy < 0) {
+      this.y = 0;
+      this.vy = 0;
+      dy = 0;
+      this.grounded = true;
+    }
+
     // Check for wall collisions.
-    // TODO: Fix this.
     if (dx || dy) {
       for (let obj of this.entities.wall) {
 
@@ -111,11 +108,14 @@ class _Player {
         }
         
       }
-    
-      // Update positions.
-      this.x += dx;
-      this.y += dy;
     }
+
+    // Update positions.
+    this.x += dx;
+    this.y += dy;
+
+    // Camera.
+    //this.graphics.putIntoView(this.x, this.y);
 
   }
 

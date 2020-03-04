@@ -196,6 +196,34 @@ class _Graphics {
     return false;
   }
 
+  putIntoView(x, y) {
+    const gl = this._gl;
+
+    // Scroll X position into view.
+    const borderX = 160;
+    const leftX = x - borderX;
+    if (leftX < this.cameraX) {
+      this.cameraX = leftX;
+    } else {
+      const rightX = x - gl.canvas.width + borderX;
+      if (rightX > this.cameraX) {
+        this.cameraX = rightX;
+      }
+    }
+
+    // Scroll Y position into view.
+    const borderY = 96;
+    const bottomY = y - borderY;
+    if (bottomY < this.cameraY) {
+      this.cameraY = bottomY;
+    } else {
+      const topY = y - gl.canvas.height + borderY;
+      if (topY > this.cameraY) {
+        this.cameraY = topY;
+      }
+    }
+  }
+
   drawTile(texture, x, y, w, h, ux = 0, uy = 0, uw = 1, uh = 1) {
     const gl = this._gl;
 

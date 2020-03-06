@@ -46,6 +46,19 @@ class _Graphics {
     this._tileProgram_UTexSize = gl.getUniformLocation(this._tileProgram, 'u_tex_size');
     this._tileProgram_UTex = gl.getUniformLocation(this._tileProgram, 'u_tex');
 
+    // Create point program.
+    this._pointProgram = this._loadProgram(_Graphics.POINT_VERT, _Graphics.POINT_FRAG);
+    this._pointProgram_APos = gl.getAttribLocation(this._pointProgram, 'a_pos');
+    this._pointProgram_AColor = gl.getAttribLocation(this._pointProgram, 'a_color');
+    this._pointProgram_UCanvas = gl.getUniformLocation(this._pointProgram, 'u_canvas');
+    this._pointProgram_UPointsize = gl.getUniformLocation(this._pointProgram, 'u_pointsize');
+
+    // Init particle properties.
+    this.MAX_POINTS = 256;
+    this.pointXY = new Float32Array(this.MAX_POINTS);
+    this.pointColor = new Float32Array(this.MAX_POINTS * 4);
+    this.pointCount = 0;
+
     // Clear canvas.
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -76,6 +89,9 @@ class _Graphics {
     if (loseContextObj) {
       loseContextObj.loseContext();
     }
+
+    this.pointXY = null;
+    this.pointColor = null;
   }
 
   /**
@@ -196,6 +212,15 @@ class _Graphics {
     return false;
   }
 
+  getCameraBounds() {
+    return {
+      x: this.cameraX,
+      y: this.cameraY,
+      w: this._gl.canvas.width,
+      h: this._gl.canvas.height,
+    };
+  }
+
   putIntoView(x, y) {
     const gl = this._gl;
 
@@ -222,6 +247,16 @@ class _Graphics {
         this.cameraY = topY;
       }
     }
+  }
+
+  beforeDraw() {
+    const gl = this._gl;
+
+    gl.clearColor(0.0, 0.1, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+    this.pointCount = 0;
   }
 
   drawTile(texture, x, y, w, h, ux = 0, uy = 0, uw = 1, uh = 1) {
@@ -264,6 +299,65 @@ class _Graphics {
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
     return true;
+  }
+
+  drawPoint(x, y, r, g, b, a) {
+    const gl = this._gl;
+
+    x -= this.cameraX;
+    y -= this.cameraY;
+
+    // Check if the point is visible.
+    if (x > gl.canvas.width || y > gl.canvas.height || x < 0 || y < 0) {
+      return false;
+    }
+
+    const iXY = this.pointCount * 2;
+    this.pointXY[iXY] = x;
+    this.pointXY[iXY + 1] = y;
+
+    const iC = this.pointCount * 4;
+    this.pointColor[iC] = r;
+    this.pointColor[iC + 1] = g;
+    this.pointColor[iC + 2] = b;
+    this.pointColor[iC + 3] = a;
+
+    this.pointCount += 1;
+  }
+
+  drawPoints() {
+    if (this.pointCount === 0) {
+      return;
+    }
+    const gl = this._gl;
+
+    // Program.
+    gl.useProgram(this._pointProgram);
+
+    // Uniforms.
+    gl.uniform2f(this._pointProgram_UCanvas, gl.canvas.width, gl.canvas.height);
+    gl.uniform1f(this._pointProgram_UPointsize, 1);
+
+    // Position Attribute.
+    const posBuffer = this._createBuffer(this.pointXY);
+    gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+    gl.enableVertexAttribArray(this._pointProgram_APos);
+    gl.vertexAttribPointer(this._pointProgram_APos, 2, gl.FLOAT, false, 0, 0);
+
+    // Color Attribute.
+    const colorBuffer = this._createBuffer(this.pointColor);
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.enableVertexAttribArray(this._pointProgram_AColor);
+    gl.vertexAttribPointer(this._pointProgram_AColor, 4, gl.FLOAT, false, 0, 0);
+
+    // Blend func.
+    gl.enable(gl.BLEND);
+    gl.blendEquation(gl.FUNC_ADD);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    // Draw.
+    gl.drawArrays(gl.POINTS, 0, this.pointCount);
+
   }
 }
 
@@ -310,5 +404,45 @@ uniform sampler2D u_tex;
 void main() {
   
   gl_FragColor = texture2D(u_tex, v_tex_coord);
+
+}`;
+
+/*
+  Point shaders.
+*/
+_Graphics.POINT_VERT = `#ifdef GL_ES
+precision mediump float;
+#endif
+
+attribute vec2 a_pos;
+attribute vec4 a_color;
+uniform vec2 u_canvas;
+uniform float u_pointsize;
+varying vec4 v_color;
+
+void main() {
+
+  gl_PointSize = u_pointsize;
+
+  // Transformations.
+  vec2 scale = 2.0 / u_canvas;
+  vec2 transform = vec2(-1.0, -1.0);
+
+  // Transform.
+  vec2 pos = (a_pos * scale) + transform;
+  gl_Position = vec4(pos, 0.0, 1.0);
+
+  v_color = a_color;
+
+}`;
+_Graphics.POINT_FRAG = `#ifdef GL_ES
+precision mediump float;
+#endif
+
+varying vec4 v_color;
+
+void main() {
+  
+  gl_FragColor = v_color;
 
 }`;

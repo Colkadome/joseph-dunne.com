@@ -7,12 +7,11 @@ class _LevelWalls {
 
   constructor(w, h) {
 
-    this.types = new Set(['graphics', 'wall']);
+    this.types = new Set(['graphics', 'wall', 'update']);
 
     this.w = w || 0;
     this.h = h || 0;
     this.walls = null;
-
   }
 
   init() {
@@ -37,6 +36,10 @@ class _LevelWalls {
 
   }
 
+  hasCeilingAbove(x, y) {
+    return !this.isWallAt(x, y) && this.isWallAt(x, y + 1);
+  }
+
   isWallAt(x, y) {
     return this.getWallAt(x, y) === 1;
   }
@@ -44,7 +47,7 @@ class _LevelWalls {
   getWallAt(x, y) {
 
     if (x < 0 || x > this.w - 1 || y < 0 || y > this.h - 1) {
-      return 0;
+      return 1;
     }
 
     return this.walls[(y * this.w) + x];
@@ -134,6 +137,21 @@ class _LevelWalls {
     }
 
     return null;
+  }
+
+  update(dT) {
+    if (Math.random() > 0.95) {
+
+      const bounds = this.graphics.getCameraBounds();
+
+      const x = Math.floor((bounds.x + (Math.random() * bounds.w)) / 16);
+      const y = Math.floor((bounds.y + (Math.random() * bounds.h)) / 16);
+
+      if (this.hasCeilingAbove(x, y)) {
+        this.game.addObject(new _Droplet((x * 16) + 8, (y * 16) + 16, 1, 1, 1, 1));
+      }
+
+    }
   }
 
   draw() {

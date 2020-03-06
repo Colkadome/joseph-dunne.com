@@ -45,6 +45,8 @@ class _Player {
 
   update(dT) {
 
+    const chickenSize = 12;
+
     // Check movement. We want to do this before updating 'x' and 'y' for responsiveness.
     if (this.keyboard.keyIsHeld('arrowright')) {
       this.vx = 128;
@@ -74,8 +76,15 @@ class _Player {
     let dx = this.vx * dT;
     let dy = this.vy * dT;
 
+    const maxX = (64 * 16) - chickenSize;
+    const maxY = (64 * 16) - chickenSize;
+
     if (this.x + dx < 0) {
       this.x = 0;
+      this.vx = 0;
+      dx = 0;
+    } else if (this.x + dx > maxX) {
+      this.x = maxX;
       this.vx = 0;
       dx = 0;
     }
@@ -84,13 +93,16 @@ class _Player {
       this.vy = 0;
       dy = 0;
       this.grounded = true;
+    } else if (this.y + dy > maxY) {
+      this.y = maxY;
+      this.vy = 0;
+      dy = 0;
     }
 
     // Check for wall collisions.
     if (dx || dy) {
       for (let obj of this.entities.wall) {
 
-        const chickenSize = 12;
         const result = obj.getCollisionAt(this.x, this.y, chickenSize, chickenSize, dx, dy);
 
         if (result) {
@@ -115,7 +127,7 @@ class _Player {
     this.y += dy;
 
     // Camera.
-    //this.graphics.putIntoView(this.x, this.y);
+    this.graphics.putIntoView(this.x, this.y);
 
   }
 

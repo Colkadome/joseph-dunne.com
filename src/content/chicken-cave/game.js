@@ -34,6 +34,7 @@ class _Game {
   addObject(obj) {
 
     // Add systems.
+    obj.game = this;
     obj.entities = this.entities;
     obj.keyboard = this.keyboard;
     obj.graphics = this.graphics;
@@ -59,6 +60,7 @@ class _Game {
     obj.destroy();
 
     // Remove systems.
+    obj.game = null;
     obj.entities = null;
     obj.keyboard = null;
     obj.graphics = null;
@@ -78,7 +80,7 @@ class _Game {
   init() {
 
     // Init the first scene.
-    this.addObject(new _Player(16, 16));
+    this.addObject(new _Player(0, 0));
 
     /*
     for (let x = 0; x < 16; x += 1) {
@@ -99,9 +101,13 @@ class _Game {
 
   draw() {
 
+    this.graphics.beforeDraw();
+
     for (let obj of this.entities.graphics) {
-      obj.draw(this.graphics);
+      obj.draw();
     }
+
+    this.graphics.drawPoints();
 
     return this;
   }

@@ -7,7 +7,7 @@ class _Wall {
 
   constructor(x, y) {
 
-    this.types = new Set(['graphics', 'blocker']);
+    this.types = new Set(['draw', 'blocker']);
 
     this.x = x || 0;
     this.y = y || 0;

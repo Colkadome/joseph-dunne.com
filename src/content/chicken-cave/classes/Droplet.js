@@ -7,7 +7,7 @@ class _Droplet {
 
   constructor(x, y, r, g, b, a) {
 
-    this.types = new Set(['graphics', 'update']);
+    this.types = new Set(['draw', 'update']);
 
     this.x = x || 0;
     this.y = y || 0;

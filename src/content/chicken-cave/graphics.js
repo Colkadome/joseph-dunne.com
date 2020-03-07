@@ -51,6 +51,7 @@ class _Graphics {
     this._pointProgram_APos = gl.getAttribLocation(this._pointProgram, 'a_pos');
     this._pointProgram_AColor = gl.getAttribLocation(this._pointProgram, 'a_color');
     this._pointProgram_UCanvas = gl.getUniformLocation(this._pointProgram, 'u_canvas');
+    this._pointProgram_UCamera = gl.getUniformLocation(this._pointProgram, 'u_camera');
     this._pointProgram_UPointsize = gl.getUniformLocation(this._pointProgram, 'u_pointsize');
 
     // Init particle properties.
@@ -301,34 +302,7 @@ class _Graphics {
     return true;
   }
 
-  drawPoint(x, y, r, g, b, a) {
-    const gl = this._gl;
-
-    x -= this.cameraX;
-    y -= this.cameraY;
-
-    // Check if the point is visible.
-    if (x > gl.canvas.width || y > gl.canvas.height || x < 0 || y < 0) {
-      return false;
-    }
-
-    const iXY = this.pointCount * 2;
-    this.pointXY[iXY] = x;
-    this.pointXY[iXY + 1] = y;
-
-    const iC = this.pointCount * 4;
-    this.pointColor[iC] = r;
-    this.pointColor[iC + 1] = g;
-    this.pointColor[iC + 2] = b;
-    this.pointColor[iC + 3] = a;
-
-    this.pointCount += 1;
-  }
-
-  drawPoints() {
-    if (this.pointCount === 0) {
-      return;
-    }
+  drawPoints(xy, colors, first, count) {
     const gl = this._gl;
 
     // Program.
@@ -336,16 +310,17 @@ class _Graphics {
 
     // Uniforms.
     gl.uniform2f(this._pointProgram_UCanvas, gl.canvas.width, gl.canvas.height);
-    gl.uniform1f(this._pointProgram_UPointsize, 1);
+    gl.uniform2f(this._pointProgram_UCamera, this.cameraX, this.cameraY);
+    gl.uniform1f(this._pointProgram_UPointsize, 2);  // NOTE: Point size of 1 is dim.
 
     // Position Attribute.
-    const posBuffer = this._createBuffer(this.pointXY);
+    const posBuffer = this._createBuffer(xy);
     gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
     gl.enableVertexAttribArray(this._pointProgram_APos);
     gl.vertexAttribPointer(this._pointProgram_APos, 2, gl.FLOAT, false, 0, 0);
 
     // Color Attribute.
-    const colorBuffer = this._createBuffer(this.pointColor);
+    const colorBuffer = this._createBuffer(colors);
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
     gl.enableVertexAttribArray(this._pointProgram_AColor);
     gl.vertexAttribPointer(this._pointProgram_AColor, 4, gl.FLOAT, false, 0, 0);
@@ -356,7 +331,7 @@ class _Graphics {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     // Draw.
-    gl.drawArrays(gl.POINTS, 0, this.pointCount);
+    gl.drawArrays(gl.POINTS, first, count);
 
   }
 }
@@ -417,22 +392,31 @@ precision mediump float;
 attribute vec2 a_pos;
 attribute vec4 a_color;
 uniform vec2 u_canvas;
+uniform vec2 u_camera;
 uniform float u_pointsize;
 varying vec4 v_color;
 
 void main() {
 
-  gl_PointSize = u_pointsize;
+  v_color = a_color;
+
+  // If the point is dead, move it outside the viewbox.
+  if (a_color.a <= 0.0) {
+    gl_PointSize = 0.0;
+    gl_Position = vec4(-2.0, -2.0, 0.0, 1.0);
+    return; 
+  }
 
   // Transformations.
   vec2 scale = 2.0 / u_canvas;
   vec2 transform = vec2(-1.0, -1.0);
 
   // Transform.
-  vec2 pos = (a_pos * scale) + transform;
+  vec2 pos = (floor(a_pos - u_camera + 0.5) * scale) + transform;
   gl_Position = vec4(pos, 0.0, 1.0);
 
-  v_color = a_color;
+  // Properties.
+  gl_PointSize = u_pointsize;
 
 }`;
 _Graphics.POINT_FRAG = `#ifdef GL_ES

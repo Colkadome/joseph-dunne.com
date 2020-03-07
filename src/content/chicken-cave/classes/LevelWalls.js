@@ -7,11 +7,12 @@ class _LevelWalls {
 
   constructor(w, h) {
 
-    this.types = new Set(['graphics', 'wall', 'update']);
+    this.types = new Set(['draw', 'wall', 'update']);
 
     this.w = w || 0;
     this.h = h || 0;
     this.walls = null;
+    this.dripTimer = 0;
   }
 
   init() {
@@ -51,6 +52,13 @@ class _LevelWalls {
     }
 
     return this.walls[(y * this.w) + x];
+  }
+
+  isSolidAtPosition(x, y) {
+    return this.isWallAt(
+      Math.floor(x * 0.0625),
+      Math.floor(y * 0.0625)
+    );
   }
 
   getWallCountsAt(x, y, w, h) {
@@ -139,18 +147,33 @@ class _LevelWalls {
     return null;
   }
 
-  update(dT) {
-    if (Math.random() > 0.95) {
+  spawnDrip() {
 
-      const bounds = this.graphics.getCameraBounds();
+    const bounds = this.graphics.getCameraBounds();
 
-      const x = Math.floor((bounds.x + (Math.random() * bounds.w)) / 16);
-      const y = Math.floor((bounds.y + (Math.random() * bounds.h)) / 16);
+    const xx = bounds.x + (Math.random() * bounds.w);
+    const yy = bounds.y + (Math.random() * bounds.h);
 
-      if (this.hasCeilingAbove(x, y)) {
-        this.game.addObject(new _Droplet((x * 16) + 8, (y * 16) + 16, 1, 1, 1, 1));
+    const xGrid = Math.floor(xx * 0.0625);
+    const yGrid = Math.floor(yy * 0.0625);
+
+    if (this.hasCeilingAbove(xGrid, yGrid)) {
+      for (let particle of this.entities.particle) {
+        particle.spawn(
+          xx, (yGrid * 16) + 16,
+          0, -4,
+          1, 1, 1, 1
+        );
       }
+    }
+  }
 
+  update(dT) {
+    if (this.dripTimer < 0) {
+      this.spawnDrip();
+      this.dripTimer = -1;
+    } else {
+      this.dripTimer -= dT;
     }
   }
 

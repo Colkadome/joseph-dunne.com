@@ -18,12 +18,13 @@ class _Game {
 
       // Main.
       all: new Set(),
-      graphics: new Set(),
+      draw: new Set(),
       update: new Set(),
 
       // Other.
       blocker: new Set(),
       wall: new Set(),
+      particle: new Set(),
 
     };
 
@@ -92,6 +93,8 @@ class _Game {
 
     this.addObject(new _LevelWalls(64, 64));
 
+    this.addObject(new _Particles());
+
     return this;
   }
 
@@ -103,11 +106,9 @@ class _Game {
 
     this.graphics.beforeDraw();
 
-    for (let obj of this.entities.graphics) {
+    for (let obj of this.entities.draw) {
       obj.draw();
     }
-
-    this.graphics.drawPoints();
 
     return this;
   }
@@ -125,7 +126,7 @@ class _Game {
     this.eT += dT;
 
     for (let obj of this.entities.update) {
-      obj.update(dT);
+      obj.update(dT, this.eT);
     }
 
     return this;

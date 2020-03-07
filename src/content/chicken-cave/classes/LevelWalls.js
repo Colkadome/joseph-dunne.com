@@ -152,7 +152,7 @@ class _LevelWalls {
     const bounds = this.graphics.getCameraBounds();
 
     const xx = bounds.x + (Math.random() * bounds.w);
-    const yy = bounds.y + (Math.random() * bounds.h);
+    const yy = bounds.y + (Math.random() * bounds.h * 1.5);  // Include more ceiling.
 
     const xGrid = Math.floor(xx * 0.0625);
     const yGrid = Math.floor(yy * 0.0625);
@@ -160,9 +160,10 @@ class _LevelWalls {
     if (this.hasCeilingAbove(xGrid, yGrid)) {
       for (let particle of this.entities.particle) {
         particle.spawn(
+          _Particles.WATER,
           xx, (yGrid * 16) + 16,
           0, -4,
-          1, 1, 1, 1
+          0, 0.5, 1, 1
         );
       }
     }

@@ -5,13 +5,14 @@
 
 class _Particles {
 
-  constructor(x, y, r, g, b, a) {
+  constructor() {
 
     this.types = new Set(['draw', 'update', 'particle']);
 
     this.MAX_POINTS = 32;
     this.pos = 0;
 
+    this.pointType = null;
     this.pointXY = null
     this.pointVel = null;
     this.pointColor = null;
@@ -20,6 +21,7 @@ class _Particles {
 
   init() {
 
+    this.pointType = new Uint8Array(this.MAX_POINTS);
     this.pointXY = new Float32Array(this.MAX_POINTS * 2);
     this.pointVel = new Float32Array(this.MAX_POINTS * 2);
     this.pointColor = new Float32Array(this.MAX_POINTS * 4);
@@ -33,12 +35,19 @@ class _Particles {
 
   destroy() {
 
+    this.pointType = null;
+    this.pointXY = null
+    this.pointVel = null;
+    this.pointColor = null;
+
   }
 
-  spawn(x, y, xv, yv, r, g, b, a) {
+  spawn(type, x, y, xv, yv, r, g, b, a) {
 
     const i = this.pos * 2;
     const c = this.pos * 4;
+
+    this.pointType[this.pos] = type;
 
     this.pointXY[i] = x;
     this.pointXY[i + 1] = y;
@@ -79,8 +88,8 @@ class _Particles {
       const i = n * 2;
 
       // Update positions.
-      this.pointXY[i] += this.pointVel[i] * dT;
-      this.pointXY[i + 1] += this.pointVel[i + 1] * dT;
+      let dx = this.pointVel[i] * dT;
+      let dy = this.pointVel[i + 1] * dT;
 
       // Check if particle is in bounds.
       if (this.pointXY[i + 1] < 0) {
@@ -90,11 +99,19 @@ class _Particles {
 
       // Check if particle collides with the level.
       for (let wall of this.entities.wall) {
-        if (wall.isSolidAtPosition(this.pointXY[i], this.pointXY[i + 1])) {
+        if (wall.isSolidAtPosition(this.pointXY[i] + dx, this.pointXY[i + 1] + dy)) {
           this.killParticle(n);
           continue;
+          //dx = 0;
+          //dy = 0;
+          //this.pointVel[i] *= -0.1;
+          //this.pointVel[i + 1] *= -0.1;
         }
       }
+
+      // Update positions.
+      this.pointXY[i] += dx;
+      this.pointXY[i + 1] += dy;
 
       // Update velocity.
       this.pointVel[i + 1] -= 256 * dT;
@@ -104,3 +121,6 @@ class _Particles {
   }
 
 }
+
+// Point types.
+_Particles.WATER = 1;

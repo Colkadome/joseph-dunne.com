@@ -83,7 +83,7 @@ class _Player {
       this.x = 0;
       this.vx = 0;
       dx = 0;
-    } else if (this.x + dx > maxX) {
+    } else if (this.x + dx > maxX) {  // TODO: Stopping gravity working for right boundary collision.
       this.x = maxX;
       this.vx = 0;
       dx = 0;

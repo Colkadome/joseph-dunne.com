@@ -54,12 +54,6 @@ class _Graphics {
     this._pointProgram_UCamera = gl.getUniformLocation(this._pointProgram, 'u_camera');
     this._pointProgram_UPointsize = gl.getUniformLocation(this._pointProgram, 'u_pointsize');
 
-    // Init particle properties.
-    this.MAX_POINTS = 256;
-    this.pointXY = new Float32Array(this.MAX_POINTS);
-    this.pointColor = new Float32Array(this.MAX_POINTS * 4);
-    this.pointCount = 0;
-
     // Clear canvas.
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -90,9 +84,6 @@ class _Graphics {
     if (loseContextObj) {
       loseContextObj.loseContext();
     }
-
-    this.pointXY = null;
-    this.pointColor = null;
   }
 
   /**
@@ -199,11 +190,11 @@ class _Graphics {
     this.imageMap.set(src, null);
   }
 
-  drawTileLazy(src, x, y, w, h, ux, uy, uw, uh) {
+  drawTileLazy(src, x, y, w, h, ux, uy, uw, uh, z) {
     const texture = this.imageMap.get(src);
     if (texture !== undefined) {
       if (texture !== null) {
-        return this.drawTile(texture, x, y, w, h, ux, uy, uw, uh);
+        return this.drawTile(texture, x, y, w, h, ux, uy, uw, uh, z);
       } else {
         // Draw a generic loading tile here?
       }
@@ -253,18 +244,16 @@ class _Graphics {
   beforeDraw() {
     const gl = this._gl;
 
-    gl.clearColor(0.0, 0.1, 0.0, 1.0);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
-    this.pointCount = 0;
   }
 
-  drawTile(texture, x, y, w, h, ux = 0, uy = 0, uw = 1, uh = 1) {
+  drawTile(texture, x, y, w, h, ux = 0, uy = 0, uw = 1, uh = 1, z = 1) {
     const gl = this._gl;
 
-    x -= this.cameraX;
-    y -= this.cameraY;
+    x -= this.cameraX * z;
+    y -= this.cameraY * z;
 
     // Check if the tile is visible.
     if (w === 0 || h === 0 || x > gl.canvas.width || y > gl.canvas.height || x + w < 0 || y + h < 0) {
@@ -404,7 +393,7 @@ void main() {
   if (a_color.a <= 0.0) {
     gl_PointSize = 0.0;
     gl_Position = vec4(-2.0, -2.0, 0.0, 1.0);
-    return; 
+    return;
   }
 
   // Transformations.
@@ -430,3 +419,10 @@ void main() {
   gl_FragColor = v_color;
 
 }`;
+
+/*
+  Other helpers.
+*/
+_Graphics.isPowerOf2 = function (x) {
+  return (x & (x - 1)) === 0;
+};

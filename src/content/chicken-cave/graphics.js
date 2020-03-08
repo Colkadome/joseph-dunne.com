@@ -55,8 +55,8 @@ class _Graphics {
     this._pointProgram_UPointsize = gl.getUniformLocation(this._pointProgram, 'u_pointsize');
 
     // Clear canvas.
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    //gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    //gl.clear(gl.COLOR_BUFFER_BIT);
     gl.disable(gl.DEPTH_TEST);  // Don't need this, we're not in 3D.
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
@@ -71,6 +71,7 @@ class _Graphics {
 
     // Destroy programs.
     gl.deleteProgram(this._tileProgram);
+    gl.deleteProgram(this._pointProgram);
 
     // Destroy textures.
     // TODO
@@ -84,6 +85,10 @@ class _Graphics {
     if (loseContextObj) {
       loseContextObj.loseContext();
     }
+
+    // Free other stuff.
+    this.imageMap.clear();
+    this.imageMap = null;
   }
 
   /**
@@ -172,7 +177,7 @@ class _Graphics {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
-      const imgData = ctx.getImageData(0, 0, img.width, img.height).data;
+      const imgData = new Uint8Array(ctx.getImageData(0, 0, img.width, img.height).data.buffer);
       const texture = this._createTexture(img.width, img.height, imgData);
       this.imageMap.set(src, texture);
       if (this._logger) {
@@ -244,8 +249,8 @@ class _Graphics {
   beforeDraw() {
     const gl = this._gl;
 
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    //gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    //gl.clear(gl.COLOR_BUFFER_BIT);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   }
 

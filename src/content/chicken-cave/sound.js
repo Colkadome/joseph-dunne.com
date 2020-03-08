@@ -6,7 +6,9 @@
 class _Sound {
 
   constructor(opts) {
-    this._logger = (opts && opts.logger) || null;
+    opts = opts || {};
+    this._logger = opts.logger;
+    this.graphics = opts.graphics;
 
     this.audioContext = null;
     this.buffers = new Map();
@@ -81,7 +83,13 @@ class _Sound {
       // TODO: Memoize loading sound here.
       return fetch(url)
         .then(res => res.arrayBuffer())
-        .then(arrayBuffer => this.audioContext.decodeAudioData(arrayBuffer))
+        .then(arrayBuffer => new Promise((resolve, reject) => {
+          this.audioContext.decodeAudioData(arrayBuffer, (buffer) => {
+            resolve(buffer);
+          }, (err) => {
+            reject(err);
+          });
+        }))
         .then(audioBuffer => {
           this.buffers.set(url, audioBuffer);
           if (this._logger) {
@@ -118,6 +126,15 @@ class _Sound {
       } else {
         return this.loadSound(url).then(() => this.playSound(url, opts));
       }
+    }
+  }
+
+  playSoundLazyAtPosition(url, x, y, opts) {
+    opts = opts || {};
+    if (this.graphics) {
+      const camera = this.graphics.getCameraBounds();
+      opts.pan = ((x - camera.x) / camera.w) - 0.5;
+      this.playSoundLazy(url, opts);
     }
   }
 }

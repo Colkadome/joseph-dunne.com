@@ -39,7 +39,7 @@ class _Player {
 
   playJumpSound() {
 
-    this.sound.playSoundLazy('./assets/wav/intro.wav');
+    this.sound.playSoundLazyAtPosition('./assets/wav/jump.wav', this.x, this.y);
 
   }
 

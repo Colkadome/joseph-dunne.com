@@ -19,11 +19,13 @@ class _LevelWalls {
 
     this.walls = new Uint8Array(this.w * this.h);
 
+    noise.seed(Math.random());
+
     // Init random walls.
     for (let y = 0; y < this.h; y += 1) {
       for (let x = 0; x < this.w; x += 1) {
         const i = (y * this.w) + x;
-        this.walls[i] = y === 0 || Math.random() > 0.7 ? 1 : 0;
+        this.walls[i] = noise.simplex2(x * 0.1, y * 0.2) > 0 && noise.simplex2(x * 0.2, y * 0.2) > -0.5 ? 1 : 0;
       }
     }
 

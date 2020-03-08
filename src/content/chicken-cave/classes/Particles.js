@@ -78,6 +78,15 @@ class _Particles {
     this.pointColor[(n * 4) + 3] = 0;
   }
 
+  playDripSound(x, y, speed) {
+    this.sound.playSoundLazyAtPosition(
+      './assets/wav/drip.wav', x, y,
+      {
+        playbackRate: Math.max(20, ((speed * 0.5) + 200)),
+      }
+    );
+  }
+
   update(dT, eT) {
 
     for (let n = 0; n < this.MAX_POINTS; n += 1) {
@@ -100,6 +109,7 @@ class _Particles {
       // Check if particle collides with the level.
       for (let wall of this.entities.wall) {
         if (wall.isSolidAtPosition(this.pointXY[i] + dx, this.pointXY[i + 1] + dy)) {
+          this.playDripSound(this.pointXY[i], this.pointXY[i + 1], this.pointVel[i + 1]);
           this.killParticle(n);
           continue;
           //dx = 0;

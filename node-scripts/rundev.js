@@ -49,6 +49,10 @@ async function getListOfFiles(rootPath, _path, _fileList) {
   for await (const dirent of dir) {
 
     const name = dirent.name;
+    if (name.startsWith('.')) {
+      continue;  // Ignore hidden folders.
+    }
+
     const path = _path ? `${_path}/${name}` : name;
 
     if (dirent.isDirectory()) {

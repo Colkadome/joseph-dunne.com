@@ -17,10 +17,26 @@ class _Sound {
 
   init() {
     if (this.audioContext == null) {
+
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       this.audioContext = new AudioContext();
+
+      this.loadReverbTail();
     }
     return this;
+  }
+
+  loadReverbTail() {
+    this._loadSound('./assets/wav/Rays.wav')
+      .then(buffer => {
+        this.convolver = this.audioContext.createConvolver();
+        this.convolver.buffer = buffer;
+      })
+      .catch(err => {
+        if (this._logger) {
+          this._logger('Error loading convolver:', err.message);
+        }
+      });
   }
 
   destroy() {
@@ -41,6 +57,7 @@ class _Sound {
       loopEnd: 0,
       start: 0,
       playbackRate: 1,
+      reverb: 0,
       ...opts,
     };
 
@@ -53,7 +70,7 @@ class _Sound {
     source.buffer = buffer;
     let node = source;
 
-    if (opts.gain != null) {
+    if (opts.gain !== 1) {
       const gainNode = this.audioContext.createGain();
       gainNode.gain.value = opts.gain;
       node.connect(gainNode);
@@ -67,6 +84,12 @@ class _Sound {
       node = panNode;
     }
 
+    if (opts.reverb && this.convolver) {
+      const reverbNode = this.convolver;
+      node.connect(reverbNode);
+      node = reverbNode;
+    }
+
     node.connect(this.audioContext.destination);
     source.loop = opts.loop;
     source.loopStart = opts.loopStart;
@@ -77,19 +100,28 @@ class _Sound {
     return source;
   }
 
+  _loadSound(url) {
+
+    if (this.audioContext == null) {
+      throw new Error('Cannot load sound. No AudioContext:', url);
+    }
+
+    return fetch(url)
+      .then(res => res.arrayBuffer())
+      .then(arrayBuffer => new Promise((resolve, reject) => {
+        this.audioContext.decodeAudioData(arrayBuffer, (buffer) => {
+          resolve(buffer);
+        }, (err) => {
+          reject(err);
+        });
+      }));
+  }
+
   loadSound(url) {
     this.buffers.set(url, null);  // Mark the URL as loading.
     if (this.audioContext != null) {
       // TODO: Memoize loading sound here.
-      return fetch(url)
-        .then(res => res.arrayBuffer())
-        .then(arrayBuffer => new Promise((resolve, reject) => {
-          this.audioContext.decodeAudioData(arrayBuffer, (buffer) => {
-            resolve(buffer);
-          }, (err) => {
-            reject(err);
-          });
-        }))
+      return this._loadSound(url)
         .then(audioBuffer => {
           this.buffers.set(url, audioBuffer);
           if (this._logger) {

@@ -28,9 +28,7 @@ class _LevelWalls {
         this.walls[i] = noise.simplex2(x * 0.1, y * 0.2) > 0 && noise.simplex2(x * 0.2, y * 0.2) > -0.5 ? 1 : 0;
       }
     }
-
-    // Init textures.
-
+    
   }
 
   destroy() {

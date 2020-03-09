@@ -83,6 +83,7 @@ class _Particles {
       './assets/wav/drip.wav', x, y,
       {
         playbackRate: Math.max(20, ((speed * 0.5) + 200)),
+        reverb: 1,
       }
     );
   }

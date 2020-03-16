@@ -97,20 +97,23 @@ class _Particles {
 
       const i = n * 2;
 
-      // Update positions.
-      let dx = this.pointVel[i] * dT;
-      let dy = this.pointVel[i + 1] * dT;
-
       // Check if particle is in bounds.
-      if (this.pointXY[i + 1] < 0) {
+      const x = this.pointXY[i];
+      const y = this.pointXY[i + 1];
+      if (x < 0 || y < 0) {
         this.killParticle(n);
         continue;
       }
 
+      const xv = this.pointVel[i];
+      const yv = this.pointVel[i + 1];
+      const dx = xv * dT;
+      const dy = yv * dT;
+
       // Check if particle collides with the level.
       for (let wall of this.entities.wall) {
-        if (wall.isSolidAtPosition(this.pointXY[i] + dx, this.pointXY[i + 1] + dy)) {
-          this.playDripSound(this.pointXY[i], this.pointXY[i + 1], this.pointVel[i + 1]);
+        if (wall.isSolidAtPosition(x + dx, y + dy)) {
+          this.playDripSound(x, y, yv);
           this.killParticle(n);
           continue;
           //dx = 0;
@@ -121,11 +124,11 @@ class _Particles {
       }
 
       // Update positions.
-      this.pointXY[i] += dx;
-      this.pointXY[i + 1] += dy;
+      this.pointXY[i] = x + dx;
+      this.pointXY[i + 1] = y + dy;
 
       // Update velocity.
-      this.pointVel[i + 1] -= 256 * dT;
+      this.pointVel[i + 1] = yv - (256 * dT);
 
     }
 

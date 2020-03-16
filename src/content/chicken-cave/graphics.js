@@ -265,12 +265,15 @@ class _Graphics {
       return false;
     }
 
+    // Program.
+    gl.disable(gl.DEPTH_TEST);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.useProgram(this._tileProgram);
+
     // Texture.
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
-
-    // Program.
-    gl.useProgram(this._tileProgram);
 
     // Uniforms.
     gl.uniform2f(this._tileProgram_UCanvas, gl.canvas.width, gl.canvas.height);
@@ -300,6 +303,9 @@ class _Graphics {
     const gl = this._gl;
 
     // Program.
+    gl.disable(gl.DEPTH_TEST);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.useProgram(this._pointProgram);
 
     // Uniforms.
@@ -392,8 +398,6 @@ varying vec4 v_color;
 
 void main() {
 
-  v_color = a_color;
-
   // If the point is dead, move it outside the viewbox.
   if (a_color.a <= 0.0) {
     gl_PointSize = 0.0;
@@ -401,16 +405,12 @@ void main() {
     return;
   }
 
-  // Transformations.
-  vec2 scale = 2.0 / u_canvas;
-  vec2 transform = vec2(-1.0, -1.0);
+  vec2 pos = (floor((a_pos - u_camera + 0.5) * 2.0) / u_canvas) + vec2(-1.0, -1.0);
 
-  // Transform.
-  vec2 pos = (floor(a_pos - u_camera + 0.5) * scale) + transform;
   gl_Position = vec4(pos, 0.0, 1.0);
-
-  // Properties.
   gl_PointSize = u_pointsize;
+
+  v_color = a_color;
 
 }`;
 _Graphics.POINT_FRAG = `#ifdef GL_ES

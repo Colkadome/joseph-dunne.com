@@ -251,7 +251,7 @@ class _Graphics {
 
     //gl.clearColor(0.0, 0.0, 0.0, 1.0);
     //gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    //gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   }
 
   drawTile(texture, x, y, w, h, ux = 0, uy = 0, uw = 1, uh = 1, z = 1) {

@@ -43,9 +43,11 @@ class _Game {
 
     // Add to entities.
     this.entities.all.add(obj);
-    for (let type of obj.types) {
-      if (this.entities[type]) {
-        this.entities[type].add(obj);
+    if (obj.types) {
+      for (let type of obj.types) {
+        if (this.entities[type]) {
+          this.entities[type].add(obj);
+        }
       }
     }
 
@@ -69,9 +71,11 @@ class _Game {
 
     // Remove from entities.
     this.entities.all.delete(obj);
-    for (let type of obj.types) {
-      if (this.entities[type]) {
-        this.entities[type].delete(obj);
+    if (obj.types) {
+      for (let type of obj.types) {
+        if (this.entities[type]) {
+          this.entities[type].delete(obj);
+        }
       }
     }
 
@@ -81,9 +85,7 @@ class _Game {
   init() {
 
     // Init the first scene.
-    this.addObject(new _Background());
-    this.addObject(new _LevelWalls(64, 64));
-    this.addObject(new _Player(0, 0));
+    this.addObject(new _TitleScene());
     this.addObject(new _Particles());
 
     return this;
@@ -91,6 +93,7 @@ class _Game {
 
   destroy() {
     
+    return this;
   }
 
   draw() {

@@ -5,7 +5,7 @@
 
 class _LevelWalls {
 
-  constructor(w, h) {
+  constructor(w, h, useWalls) {
 
     this.types = new Set(['draw', 'wall', 'update']);
 
@@ -18,6 +18,11 @@ class _LevelWalls {
   init() {
 
     this.walls = new Uint8Array(this.w * this.h);
+    
+    return this;
+  }
+
+  initRandom() {
 
     noise.seed(Math.random());
 
@@ -28,13 +33,15 @@ class _LevelWalls {
         this.walls[i] = noise.simplex2(x * 0.1, y * 0.2) > 0 && noise.simplex2(x * 0.2, y * 0.2) > -0.5 ? 1 : 0;
       }
     }
-    
+
+    return this;
   }
 
   destroy() {
 
     this.walls = null;
 
+    return this;
   }
 
   hasCeilingAbove(x, y) {

@@ -13,6 +13,8 @@ class _Graphics {
     this._gl = null;
     this.cameraX = 0;
     this.cameraY = 0;
+    this.lastCameraX = 0;
+    this.lastCameraY = 0;
     this.imageMap = new Map();
   }
 
@@ -36,6 +38,13 @@ class _Graphics {
     // Create buffers.
     this._quadBuffer = this._createBuffer(new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
 
+    // Create framebuffers.
+    this._fadeFramebuffer = gl.createFramebuffer();
+
+    // Create textures.
+    this._fadeTextureFront = this._createTexture(gl.canvas.width, gl.canvas.height, null);
+    this._fadeTextureBack = this._createTexture(gl.canvas.width, gl.canvas.height, null);
+
     // Create tile program.
     this._tileProgram = this._loadProgram(_Graphics.TILE_VERT, _Graphics.TILE_FRAG);
     this._tileProgram_AQuad = gl.getAttribLocation(this._tileProgram, 'a_quad');
@@ -54,6 +63,19 @@ class _Graphics {
     this._pointProgram_UCanvas = gl.getUniformLocation(this._pointProgram, 'u_canvas');
     this._pointProgram_UCamera = gl.getUniformLocation(this._pointProgram, 'u_camera');
 
+    // Create fade program.
+    this._fadeProgram = this._loadProgram(_Graphics.FADE_VERT, _Graphics.FADE_FRAG);
+    this._fadeProgram_AQuad = gl.getAttribLocation(this._fadeProgram, 'a_quad');
+    this._fadeProgram_UTex = gl.getUniformLocation(this._fadeProgram, 'u_tex');
+    this._fadeProgram_USize = gl.getUniformLocation(this._fadeProgram, 'u_size');
+    this._fadeProgram_UOffset = gl.getUniformLocation(this._fadeProgram, 'u_offset');
+
+    // Create overlay program.
+    this._overlayProgram = this._loadProgram(_Graphics.OVERLAY_VERT, _Graphics.OVERLAY_FRAG);
+    this._overlayProgram_AQuad = gl.getAttribLocation(this._overlayProgram, 'a_quad');
+    this._overlayProgram_UTex = gl.getUniformLocation(this._overlayProgram, 'u_tex');
+    this._overlayProgram_USize = gl.getUniformLocation(this._overlayProgram, 'u_size');
+
     // Clear canvas.
     //gl.clearColor(0.0, 0.0, 0.0, 1.0);
     //gl.clear(gl.COLOR_BUFFER_BIT);
@@ -66,6 +88,9 @@ class _Graphics {
   destroy() {
     const gl = this._gl;
 
+    // Destroy framebuffers.
+    gl.deleteFramebuffer(this._fadeFramebuffer);
+
     // Destroy buffers.
     gl.deleteBuffer(this._quadBuffer);
 
@@ -74,6 +99,7 @@ class _Graphics {
     gl.deleteProgram(this._pointProgram);
 
     // Destroy textures.
+    gl.deleteTexture(this._fadeTexture);
     for (let texture of this.imageMap.values()) {
       gl.deleteTexture(texture);
     }
@@ -256,6 +282,11 @@ class _Graphics {
     //gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   }
 
+  afterDraw() {
+    this.lastCameraX = this.cameraX;
+    this.lastCameraY = this.cameraY;
+  }
+
   drawTile(texture, x, y, w, h, ux = 0, uy = 0, uw = 1, uh = 1, z = 1) {
     const gl = this._gl;
 
@@ -304,16 +335,58 @@ class _Graphics {
   drawPoints(types, xy, vel, first, count) {
     const gl = this._gl;
 
+    // PASS 1 - Fade front texture with offset.
+
     // Program.
     gl.disable(gl.DEPTH_TEST);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this._fadeFramebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._fadeTextureBack, 0);
+    gl.useProgram(this._fadeProgram);
+
+    // Texture.
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this._fadeTextureFront);
+
+    // Uniforms.
+    gl.uniform2f(this._fadeProgram_USize, gl.canvas.width, gl.canvas.height);
+    gl.uniform2f(this._fadeProgram_UOffset, this.cameraX - this.lastCameraX, this.cameraY - this.lastCameraY);
+    gl.uniform1i(this._fadeProgram_UTex, 0);
+
+    // Attributes.
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._quadBuffer);
+    gl.enableVertexAttribArray(this._fadeProgram_AQuad);
+    gl.vertexAttribPointer(this._fadeProgram_AQuad, 2, gl.FLOAT, false, 0, 0);
+
+    // Blend func.
+    gl.enable(gl.BLEND);
+    gl.blendEquation(gl.FUNC_ADD);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    // Clear.
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // Draw.
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // Swap texture.
+    const temp = this._fadeTextureFront;
+    this._fadeTextureFront = this._fadeTextureBack;
+    this._fadeTextureBack = temp;
+
+    // PASS 2 - Render points to texture.
+
+    // Program.
+    gl.disable(gl.DEPTH_TEST);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this._fadeFramebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._fadeTextureFront, 0);
     gl.useProgram(this._pointProgram);
 
     // Uniforms.
     gl.uniform2f(this._pointProgram_UCanvas, gl.canvas.width, gl.canvas.height);
     gl.uniform2f(this._pointProgram_UCamera, this.cameraX, this.cameraY);
-    gl.uniform1f(this._pointProgram_UPointsize, 2);  // NOTE: Point size of 1 is dim.
 
     // Type Attribute.
     const typeBuffer = this._createBuffer(types);
@@ -340,6 +413,35 @@ class _Graphics {
 
     // Draw.
     gl.drawArrays(gl.POINTS, first, count);
+
+    // PASS 3 - Render to canvas.
+
+    // Program.
+    gl.disable(gl.DEPTH_TEST);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.useProgram(this._overlayProgram);
+
+    // Texture.
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this._fadeTextureFront);
+
+    // Uniforms.
+    gl.uniform2f(this._overlayProgram_USize, gl.canvas.width, gl.canvas.height);
+    gl.uniform1i(this._overlayProgram_UTex, 0);
+
+    // Attributes.
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._quadBuffer);
+    gl.enableVertexAttribArray(this._overlayProgram_AQuad);
+    gl.vertexAttribPointer(this._overlayProgram_AQuad, 2, gl.FLOAT, false, 0, 0);
+
+    // Blend func.
+    gl.enable(gl.BLEND);
+    gl.blendEquation(gl.FUNC_ADD);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    // Draw.
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
   }
 }
@@ -423,7 +525,7 @@ void main() {
     float b = 1.0 - min(max(a_vel.y * -0.01, 0.0), 1.0);
     gl_PointSize = 2.0 + (b * 2.0);
 
-    v_color = vec4(b * 0.5, 0.3 + (b * 0.7), 1.0, (b * 0.5) + 0.5);
+    v_color = vec4(b * 0.5, 0.3 + (b * 0.7), (b * 0.5) + 0.5, 0.9 + (b * 0.1));
   }
 
 }`;
@@ -443,6 +545,67 @@ void main() {
   } else {
     gl_FragColor = v_color;
   }
+
+}`;
+
+/*
+  Fade texture shaders.
+*/
+_Graphics.FADE_VERT = `#ifdef GL_ES
+precision mediump float;
+#endif
+
+attribute vec2 a_quad;
+
+void main() {
+  gl_Position = vec4(a_quad, 0, 1.0);
+}`;
+
+_Graphics.FADE_FRAG =  `#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform sampler2D u_tex;
+uniform vec2 u_size;
+uniform vec2 u_offset;
+
+void main() {
+
+  gl_FragColor = texture2D(u_tex, (gl_FragCoord.xy + u_offset) / u_size);
+  gl_FragColor.a -= 0.05;
+  gl_FragColor.r += 0.5;
+  gl_FragColor.g += 0.25;
+  gl_FragColor.b += 0.25;
+
+  if (gl_FragColor.a < 0.5) {
+    gl_FragColor.a = 0.0;
+  }
+
+}`;
+
+/*
+  Overlay shaders.
+*/
+_Graphics.OVERLAY_VERT = `#ifdef GL_ES
+precision mediump float;
+#endif
+
+attribute vec2 a_quad;
+
+void main() {
+  gl_Position = vec4(a_quad, 0, 1.0);
+}`;
+
+_Graphics.OVERLAY_FRAG =  `#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform sampler2D u_tex;
+uniform vec2 u_size;
+
+void main() {
+
+  gl_FragColor = texture2D(u_tex, gl_FragCoord.xy / u_size);
 
 }`;
 

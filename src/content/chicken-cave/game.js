@@ -113,6 +113,8 @@ class _Game {
       obj.draw();
     }
 
+    this.graphics.afterDraw();
+
     return this;
   }
 

@@ -69,7 +69,7 @@ class _Player {
 
     // Check for jump.
     if (this.grounded) {
-      if (this.keyboard.keyIsDown('z')) {
+      if (this.keyboard.keyIsDown('z') || this.keyboard.keyIsDown('arrowup')) {
         this.vy = 256;
         this.playJumpSound();
       }

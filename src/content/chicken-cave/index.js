@@ -40,14 +40,7 @@ window.addEventListener('load', function () {
   const keyboard = new _Keyboard(controlEl);
   const graphics = new _Graphics(canvasEl, { logger });
   const sound = new _Sound({ graphics, logger });
-  keyboard.init();
-  graphics.init();
-  //sound.init();  Sound only allowed after user interaction.
-
-  // Init game.
   const game = new _Game(canvasEl, keyboard, graphics, sound);
-  game.init();
-  game.draw();
 
   // Main loop.
   let playing = false;
@@ -71,10 +64,17 @@ window.addEventListener('load', function () {
   }
 
   // Add listeners.
-
+  let initted = false;
   controlEl.addEventListener('mousedown', function (event) {
     pauseTextEl.innerText = 'Click to Continue';
-    sound.init();  // Sound only allowed after user interaction.
+    if (!initted) {
+      keyboard.init();
+      graphics.init();
+      sound.init();  // Sound only allowed after user interaction.
+      game.init();
+      game.draw();
+      initted = true;
+    }
   });
 
   controlEl.addEventListener('focus', function (event) {

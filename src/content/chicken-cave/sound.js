@@ -13,15 +13,19 @@ class _Sound {
     this.audioContext = null;
     this.buffers = new Map();
     this._soundsStarted = new Set();
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    this.audioContext = new AudioContext();
+
+    // We want to load this before anything is added to the game,
+    // so that reverb works.
+    this.loadReverbTail();
   }
 
   init() {
     if (this.audioContext == null) {
-
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       this.audioContext = new AudioContext();
-
-      this.loadReverbTail();
     }
     return this;
   }
@@ -48,7 +52,7 @@ class _Sound {
     this._soundsStarted.clear();
   }
 
-  _playBuffer(buffer, opts) {
+  _playBuffer(buffer, opts, callback) {
     opts = {
       pan: 0,
       gain: 1,
@@ -70,22 +74,27 @@ class _Sound {
     source.buffer = buffer;
     let node = source;
 
+    let gainNode;
+    let panNode;
+    let reverbNode;
+
     if (opts.gain !== 1) {
-      const gainNode = this.audioContext.createGain();
+      gainNode = this.audioContext.createGain();
       gainNode.gain.value = opts.gain;
       node.connect(gainNode);
       node = gainNode;
     }
 
     if (opts.pan) {
-      const panNode = this.audioContext.createStereoPanner();
+      panNode = this.audioContext.createStereoPanner();
       panNode.pan.value = opts.pan;
       node.connect(panNode);
       node = panNode;
     }
 
     if (opts.reverb && this.convolver) {
-      const reverbNode = this.convolver;
+      reverbNode = this.convolver;
+      //reverbNode.playbackRate.value = opts.reverb;  How do we control reverb here?
       node.connect(reverbNode);
       node = reverbNode;
     }
@@ -96,6 +105,15 @@ class _Sound {
     source.loopEnd = opts.loopEnd;
     source.playbackRate.value = opts.playbackRate;
     source.start(opts.start);
+
+    if (callback) {
+      callback({
+        source,
+        gainNode,
+        panNode,
+        reverbNode,
+      });
+    }
 
     return source;
   }
@@ -137,36 +155,37 @@ class _Sound {
     }
   }
 
-  playSound(url, opts) {
+  playSound(url, opts, callback) {
     if (this.audioContext != null) {
       const buffer = this.buffers.get(url);
       if (buffer != null) {
 
         // Prevent same sound playing on the same frame.
         if (!this._soundsStarted.has(url)) {
-          this._playBuffer(buffer, opts);
+          this._playBuffer(buffer, opts, callback);
           this._soundsStarted.add(url);
         }
       }
     }
   }
 
-  playSoundLazy(url, opts) {
+  playSoundLazy(url, opts, callback) {
     if (this.audioContext != null) {
       if (this.buffers.has(url)) {
-        return this.playSound(url, opts);
+        return this.playSound(url, opts, callback);
       } else {
-        return this.loadSound(url).then(() => this.playSound(url, opts));
+        return this.loadSound(url).then(() => this.playSound(url, opts, callback));
       }
     }
   }
 
-  playSoundLazyAtPosition(url, x, y, opts) {
+  playSoundLazyAtPosition(url, x, y, opts, callback) {
     opts = opts || {};
     if (this.graphics) {
       const camera = this.graphics.getCameraBounds();
       opts.pan = ((x - camera.x) / camera.w) - 0.5;
-      this.playSoundLazy(url, opts);
+      opts.gain = 1 - Math.abs(opts.pan);
+      this.playSoundLazy(url, opts, callback);
     }
   }
 }

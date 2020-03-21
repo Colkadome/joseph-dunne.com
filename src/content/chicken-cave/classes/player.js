@@ -5,12 +5,17 @@
 
 class _Player {
 
-  constructor(x, y) {
+  constructor(opts) {
+    opts = {
+      x: 0,
+      y: 0,
+      ...opts,
+    };
 
-    this.types = new Set(['draw', 'update']);
+    this.types = new Set(['draw', 'update', 'player']);
 
-    this.x = x || 0;
-    this.y = y || 0;
+    this.x = opts.x;
+    this.y = opts.y;
     this.vx = 0;
     this.vy = 0;
     this.direction = 1;

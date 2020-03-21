@@ -22,6 +22,7 @@ class _Game {
       update: new Set(),
 
       // Other.
+      player: new Set(),
       blocker: new Set(),
       wall: new Set(),
       particle: new Set(),
@@ -33,6 +34,10 @@ class _Game {
   }
 
   addObject(obj) {
+    if (!obj) {
+      console.log('Warning: Tried to add an empty object.');
+      return;
+    }
 
     // Add systems.
     obj.game = this;
@@ -58,6 +63,10 @@ class _Game {
   }
 
   deleteObject(obj) {
+    if (!obj) {
+      console.log('Warning: Tried to remove an empty object.');
+      return;
+    }
 
     // Destroy.
     obj.destroy();
@@ -85,8 +94,8 @@ class _Game {
   init() {
 
     // Init the first scene.
-    this.addObject(new _TitleScene());
     this.addObject(new _Particles());
+    this.addObject(new _TitleScene());
 
     return this;
   }

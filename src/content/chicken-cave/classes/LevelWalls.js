@@ -5,19 +5,36 @@
 
 class _LevelWalls {
 
-  constructor(w, h, useWalls) {
+  constructor(opts) {
+    opts = {
+      w: 12,
+      h: 50,
+      walls: null,
+      blockSize: 16,
+      random: false,
+      ...opts,
+    };
 
     this.types = new Set(['draw', 'wall', 'update']);
 
-    this.w = w || 0;
-    this.h = h || 0;
-    this.walls = null;
+    this.w = opts.w;
+    this.h = opts.h;
+    this.blockSize = opts.blockSize;
+    this.blockSizeInv = 1 / opts.blockSize;
+    this.walls = opts.walls;
     this.dripTimer = 0;
+    this.random = opts.random;
   }
 
   init() {
 
-    this.walls = new Uint8Array(this.w * this.h);
+    if (this.walls == null) {
+      this.walls = new Uint8Array(this.w * this.h);
+    }
+
+    if (this.random) {
+      this.initRandom();
+    }
     
     return this;
   }
@@ -30,7 +47,8 @@ class _LevelWalls {
     for (let y = 0; y < this.h; y += 1) {
       for (let x = 0; x < this.w; x += 1) {
         const i = (y * this.w) + x;
-        this.walls[i] = noise.simplex2(x * 0.1, y * 0.2) > 0 && noise.simplex2(x * 0.2, y * 0.2) > -0.5 ? 1 : 0;
+        this.walls[i] = noise.simplex2(x * 0.1, y * 0.2) > 0 && noise.simplex2(x * 0.2, y * 0.2) > 0.5 ? 1 : 0;
+        //this.walls[i] = noise.simplex2(x * 0.1, y * 0.2) > 0 && noise.simplex2(x * 0.2, y * 0.2) > -0.5 ? 1 : 0;
       }
     }
 
@@ -62,9 +80,12 @@ class _LevelWalls {
   }
 
   isSolidAtPosition(x, y) {
+
+    const sizeInv = this.blockSizeInv;
+
     return this.isWallAt(
-      Math.floor(x * 0.0625),
-      Math.floor(y * 0.0625)
+      Math.floor(x * sizeInv),
+      Math.floor(y * sizeInv)
     );
   }
 
@@ -76,6 +97,8 @@ class _LevelWalls {
 
   getCollisionAt(x, y, w, h, dx, dy) {
 
+    // Accurate collision function, used for player only.
+
     // Get spaces that overlap with (x, y, w, h).
     // We can assume that max 4 spaces will overlap, and that (w, h) is below 16.
 
@@ -83,20 +106,20 @@ class _LevelWalls {
     //
     // (A, A)
 
-    const size = 16;
-    const scale = 0.0625;  // (1 / 16), to map coordinates to [x, y] square.
+    const size = this.blockSize;
+    const sizeInv = this.blockSizeInv;  // (1 / 16), to map coordinates to [x, y] square.
 
-    const xA1 = Math.floor(x * scale);
-    const xA2 = Math.floor((x + dx) * scale);
+    const xA1 = Math.floor(x * sizeInv);
+    const xA2 = Math.floor((x + dx) * sizeInv);
 
-    const xB1 = Math.floor((x + w) * scale);
-    const xB2 = Math.floor((x + w + dx) * scale);
+    const xB1 = Math.floor((x + w) * sizeInv);
+    const xB2 = Math.floor((x + w + dx) * sizeInv);
 
-    const yA1 = Math.floor(y * scale);
-    const yA2 = Math.floor((y + dy) * scale);
+    const yA1 = Math.floor(y * sizeInv);
+    const yA2 = Math.floor((y + dy) * sizeInv);
 
-    const yB1 = Math.floor((y + h) * scale);
-    const yB2 = Math.floor((y + h + dy) * scale);
+    const yB1 = Math.floor((y + h) * sizeInv);
+    const yB2 = Math.floor((y + h + dy) * sizeInv);
 
     let xMoved = false;
     let yMoved = false;
@@ -156,19 +179,21 @@ class _LevelWalls {
 
   spawnDrip() {
 
+    const size = this.blockSize;
+    const sizeInv = this.blockSizeInv;
     const bounds = this.graphics.getCameraBounds();
 
     const xx = bounds.x + (Math.random() * bounds.w);
     const yy = bounds.y + (Math.random() * bounds.h * 1.5);  // Include more ceiling.
 
-    const xGrid = Math.floor(xx * 0.0625);
-    const yGrid = Math.floor(yy * 0.0625);
+    const xGrid = Math.floor(xx * sizeInv);
+    const yGrid = Math.floor(yy * sizeInv);
 
     if (this.hasCeilingAbove(xGrid, yGrid)) {
       for (let particle of this.entities.particle) {
         particle.spawn(
           _Particles.WATER,
-          xx, (yGrid * 16) + 16,
+          xx, (yGrid * size) + size,
           0, -4,
           0, 0.5, 1, 1
         );
@@ -187,8 +212,8 @@ class _LevelWalls {
 
   draw() {
 
-    const scale = 16;
-    const offset = 8;
+    const size = this.blockSize;
+    const offset = size * 0.5;
 
     // X and Y range extended by 1 to draw edges.
     for (let y = -1; y < this.h + 1; y += 1) {
@@ -210,68 +235,70 @@ class _LevelWalls {
 
           this.graphics.drawTileLazy(
             './assets/img/wall-1.png',
-            x * scale,
-            y * scale,
-            scale,
-            scale,
-            0,
-            0,
-            0.2,
-            1,
+            x * size,
+            y * size,
+            size,
+            size,
+            0, 0,
+            0.2, 1,
           );
 
-          if (u === 0) {
+          if (u !== 1) {
             this.graphics.drawTileLazy(
               './assets/img/wall-1.png',
-              x * scale,
-              (y * scale) + offset,
-              scale,
-              scale,
-              0.2,
-              0,
-              0.2,
-              1,
+              x * size,
+              (y * size) + offset,
+              size,
+              size,
+              0.2, 0,
+              0.2, 1,
             );
           }
-          if (d === 0) {
+          if (d !== 1) {
             this.graphics.drawTileLazy(
               './assets/img/wall-1.png',
-              x * scale,
-              (y * scale) - offset,
-              scale,
-              scale,
-              0.4,
-              0,
-              0.2,
-              1,
+              x * size,
+              (y * size) - offset,
+              size,
+              size,
+              0.4, 0,
+              0.2, 1,
             );
           }
-          if (l === 0) {
+          if (l !== 1) {
             this.graphics.drawTileLazy(
               './assets/img/wall-1.png',
-              (x * scale) - offset,
-              y * scale,
-              scale,
-              scale,
-              0.6,
-              0,
-              0.2,
-              1,
+              (x * size) - offset,
+              y * size,
+              size,
+              size,
+              0.6, 0,
+              0.2, 1,
             );
           }
-          if (r === 0) {
+          if (r !== 1) {
             this.graphics.drawTileLazy(
               './assets/img/wall-1.png',
-              (x * scale) + offset,
-              y * scale,
-              scale,
-              scale,
-              0.8,
-              0,
-              0.2,
-              1,
+              (x * size) + offset,
+              y * size,
+              size,
+              size,
+              0.8, 0,
+              0.2, 1,
             );
           }
+
+        } else if (c === 2) {
+
+          this.graphics.drawTileLazy(
+            './assets/img/shroom-1.png',
+            (x * size) + 2,
+            y * size,
+            12,
+            12,
+            0, 0,
+            1, 1,
+          );
 
         }
       }

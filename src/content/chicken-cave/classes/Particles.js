@@ -9,14 +9,17 @@ class _Particles {
 
     this.types = new Set(['draw', 'update', 'particle']);
 
-    this.MAX_POINTS = 32;
-    this.pos = 0;
+    this.MAX_POINTS = 1024;
+    this.HALF_POINTS = 512;
+
+    this._index = 0;
 
     this.pointType = null;
     this.pointXY = null
     this.pointVel = null;
-    this.pointColor = null;
 
+    this._lastSoundTime = 0;
+    this._n = 0;
   }
 
   init() {
@@ -24,13 +27,8 @@ class _Particles {
     this.pointType = new Uint8Array(this.MAX_POINTS);
     this.pointXY = new Float32Array(this.MAX_POINTS * 2);
     this.pointVel = new Float32Array(this.MAX_POINTS * 2);
-    this.pointColor = new Float32Array(this.MAX_POINTS * 4);
 
-    this.pos = 0;
-
-    for (let i = 0; i < this.MAX_POINTS; i += 1) {
-      this.killParticle(i);
-    }
+    this._index = 0;
   }
 
   destroy() {
@@ -38,16 +36,15 @@ class _Particles {
     this.pointType = null;
     this.pointXY = null
     this.pointVel = null;
-    this.pointColor = null;
 
   }
 
-  spawn(type, x, y, xv, yv, r, g, b, a) {
+  spawn(type, x, y, xv, yv) {
 
-    const i = this.pos * 2;
-    const c = this.pos * 4;
+    const i = this._index * 2;
+    const c = this._index * 4;
 
-    this.pointType[this.pos] = type;
+    this.pointType[this._index] = type;
 
     this.pointXY[i] = x;
     this.pointXY[i + 1] = y;
@@ -55,30 +52,39 @@ class _Particles {
     this.pointVel[i] = xv;
     this.pointVel[i + 1] = yv;
 
-    this.pointColor[c] = r;
-    this.pointColor[c + 1] = g;
-    this.pointColor[c + 2] = b;
-    this.pointColor[c + 3] = a;
-
-    this.pos += 1;
-    if (this.pos >= this.MAX_POINTS) {
-      this.pos = 0;
+    this._index += 1;
+    if (this._index >= this.MAX_POINTS) {
+      this._index = 0;
     }
   }
 
   draw() {
-    this.graphics.drawPoints(this.pointXY, this.pointColor, 0, this.MAX_POINTS);
+    this.graphics.drawPoints(this.pointType, this.pointXY, this.pointVel, 0, this.MAX_POINTS);
   }
 
   particleIsAlive(n) {
-    return this.pointColor[(n * 4) + 3] > 0;
+    return this.pointType[n] > 0;
   }
 
-  killParticle(n) {
-    this.pointColor[(n * 4) + 3] = 0;
+  killParticle(n, x, y, xv, yv) {
+
+    switch (this.pointType[n]) {
+      case _Particles.WATER:
+        this.playDripSound(x, y, yv);
+        break;
+    }
+
+    this.pointType[n] = 0;
   }
 
   playDripSound(x, y, speed) {
+
+    if (this.game.eT - this._lastSoundTime < 0.1) {
+      return;
+    }
+
+    return;
+
     this.sound.playSoundLazyAtPosition(
       './assets/wav/drip.wav', x, y,
       {
@@ -86,40 +92,83 @@ class _Particles {
         reverb: 1,
       }
     );
+
+    this._lastSoundTime = this.game.eT;
   }
 
   update(dT, eT) {
 
     for (let n = 0; n < this.MAX_POINTS; n += 1) {
-      if (!this.particleIsAlive(n)) {
+      if (this.pointType[n] === 0) {
         continue;
       }
 
       const i = n * 2;
-
-      // Check if particle is in bounds.
       const x = this.pointXY[i];
       const y = this.pointXY[i + 1];
+      const xv = this.pointVel[i] + ((Math.random() - 0.5) * 32);  // Add jiggle to unstick from walls.
+      const yv = this.pointVel[i + 1] + (Math.random() * 32);  // Add jiggle to unstick from walls.
+
+      // Check if particle is in bounds.
       if (x < 0 || y < 0) {
-        this.killParticle(n);
+        this.killParticle(n, x, y, xv, yv);
         continue;
       }
 
-      const xv = this.pointVel[i];
-      const yv = this.pointVel[i + 1];
-      const dx = xv * dT;
-      const dy = yv * dT;
+      let dx = xv * dT;
+      let dy = yv * dT;
 
-      // Check if particle collides with the level.
+      // Check if particle collides with the level, or the player.
+      // We don't check for whether its an X or Y collision here,
+      // so we just assume its the one with the most velocity.
+      let hasCollided = false;
       for (let wall of this.entities.wall) {
-        if (wall.isSolidAtPosition(x + dx, y + dy)) {
-          this.playDripSound(x, y, yv);
-          this.killParticle(n);
-          continue;
-          //dx = 0;
-          //dy = 0;
-          //this.pointVel[i] *= -0.1;
-          //this.pointVel[i + 1] *= -0.1;
+        if (wall.isSolidAtPosition(x + dx, y)) {
+
+          dx *= -1;
+          this.pointVel[i] *= - Math.random();
+
+        }
+        if (wall.isSolidAtPosition(x, y + dy)) {
+
+          dy *= -1;
+          this.pointVel[i + 1] *= Math.random() * -0.1;
+
+        }
+      }
+
+      // Check if particle collides with moving player.
+      if (!hasCollided) {
+        for (let player of this.entities.player) {
+          if (player.vx !== 0 || player.vy !== 0) {
+            if (x + dx > player.x && x + dx < player.x + 12 && y + dy > player.y && y + dy < player.y + 12) {
+
+              let xx = Math.abs(player.x + 6 - x);
+              xx *= xx;
+
+              let yy = Math.abs(player.y + 6 - y);
+              yy *= yy;
+
+              if (xx + yy < 144) {
+
+                dx *= -1;
+                dy *= -1;
+
+                if (player.vx) {
+                  this.pointVel[i] = player.vx * 1.1;
+                } else {
+                  this.pointVel[i] *= -1;
+                }            
+
+                if (player.vy) {
+                  this.pointVel[i + 1] = player.vy * 1.1;
+                } else {
+                  this.pointVel[i + 1] *= -0.1;
+                }
+              }
+
+            }
+          }
         }
       }
 
@@ -128,7 +177,7 @@ class _Particles {
       this.pointXY[i + 1] = y + dy;
 
       // Update velocity.
-      this.pointVel[i + 1] = yv - (256 * dT);
+      this.pointVel[i + 1] -= 256 * dT;
 
     }
 
@@ -137,4 +186,5 @@ class _Particles {
 }
 
 // Point types.
+_Particles.NONE = 0;
 _Particles.WATER = 1;

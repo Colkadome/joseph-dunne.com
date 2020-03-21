@@ -48,11 +48,11 @@ class _Graphics {
 
     // Create point program.
     this._pointProgram = this._loadProgram(_Graphics.POINT_VERT, _Graphics.POINT_FRAG);
+    this._pointProgram_AType = gl.getAttribLocation(this._pointProgram, 'a_type');
     this._pointProgram_APos = gl.getAttribLocation(this._pointProgram, 'a_pos');
-    this._pointProgram_AColor = gl.getAttribLocation(this._pointProgram, 'a_color');
+    this._pointProgram_AVel = gl.getAttribLocation(this._pointProgram, 'a_vel');
     this._pointProgram_UCanvas = gl.getUniformLocation(this._pointProgram, 'u_canvas');
     this._pointProgram_UCamera = gl.getUniformLocation(this._pointProgram, 'u_camera');
-    this._pointProgram_UPointsize = gl.getUniformLocation(this._pointProgram, 'u_pointsize');
 
     // Clear canvas.
     //gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -74,7 +74,9 @@ class _Graphics {
     gl.deleteProgram(this._pointProgram);
 
     // Destroy textures.
-    // TODO
+    for (let texture of this.imageMap.values()) {
+      gl.deleteTexture(texture);
+    }
 
     // Set canvas to 1x1.
     gl.canvas.width = 1;
@@ -299,7 +301,7 @@ class _Graphics {
     return true;
   }
 
-  drawPoints(xy, colors, first, count) {
+  drawPoints(types, xy, vel, first, count) {
     const gl = this._gl;
 
     // Program.
@@ -313,17 +315,23 @@ class _Graphics {
     gl.uniform2f(this._pointProgram_UCamera, this.cameraX, this.cameraY);
     gl.uniform1f(this._pointProgram_UPointsize, 2);  // NOTE: Point size of 1 is dim.
 
+    // Type Attribute.
+    const typeBuffer = this._createBuffer(types);
+    gl.bindBuffer(gl.ARRAY_BUFFER, typeBuffer);
+    gl.enableVertexAttribArray(this._pointProgram_AType);
+    gl.vertexAttribPointer(this._pointProgram_AType, 1, gl.BYTE, false, 0, 0);
+
     // Position Attribute.
     const posBuffer = this._createBuffer(xy);
     gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
     gl.enableVertexAttribArray(this._pointProgram_APos);
-    gl.vertexAttribPointer(this._pointProgram_APos, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(this._pointProgram_APos, 2, gl.FLOAT, false, 0, 0);    
 
-    // Color Attribute.
-    const colorBuffer = this._createBuffer(colors);
-    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-    gl.enableVertexAttribArray(this._pointProgram_AColor);
-    gl.vertexAttribPointer(this._pointProgram_AColor, 4, gl.FLOAT, false, 0, 0);
+    // Velocity Attribute.
+    const velBuffer = this._createBuffer(vel);
+    gl.bindBuffer(gl.ARRAY_BUFFER, velBuffer);
+    gl.enableVertexAttribArray(this._pointProgram_AVel);
+    gl.vertexAttribPointer(this._pointProgram_AVel, 2, gl.FLOAT, false, 0, 0);  
 
     // Blend func.
     gl.enable(gl.BLEND);
@@ -389,17 +397,17 @@ _Graphics.POINT_VERT = `#ifdef GL_ES
 precision mediump float;
 #endif
 
+attribute float a_type;
 attribute vec2 a_pos;
-attribute vec4 a_color;
+attribute vec2 a_vel;
 uniform vec2 u_canvas;
 uniform vec2 u_camera;
-uniform float u_pointsize;
 varying vec4 v_color;
 
 void main() {
 
   // If the point is dead, move it outside the viewbox.
-  if (a_color.a <= 0.0) {
+  if (a_type <= 0.0) {
     gl_PointSize = 0.0;
     gl_Position = vec4(-2.0, -2.0, 0.0, 1.0);
     return;
@@ -408,9 +416,15 @@ void main() {
   vec2 pos = (floor((a_pos - u_camera + 0.5) * 2.0) / u_canvas) + vec2(-1.0, -1.0);
 
   gl_Position = vec4(pos, 0.0, 1.0);
-  gl_PointSize = u_pointsize;
+  gl_PointSize = 2.0;
 
-  v_color = a_color;
+  if (a_type == 1.0) {
+
+    float b = 1.0 - min(max(a_vel.y * -0.01, 0.0), 1.0);
+    gl_PointSize = 2.0 + (b * 2.0);
+
+    v_color = vec4(b * 0.5, 0.3 + (b * 0.7), 1.0, (b * 0.5) + 0.5);
+  }
 
 }`;
 _Graphics.POINT_FRAG = `#ifdef GL_ES
@@ -420,8 +434,15 @@ precision mediump float;
 varying vec4 v_color;
 
 void main() {
-  
-  gl_FragColor = v_color;
+
+  vec2 point = gl_PointCoord.xy - 0.5;
+  float dist = (point.x * point.x) + (point.y * point.y);
+
+  if (dist > 0.25) {
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+  } else {
+    gl_FragColor = v_color;
+  }
 
 }`;
 

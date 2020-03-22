@@ -137,10 +137,10 @@ class _Particles {
         }
       }
 
-      // Check if particle collides with moving player.
+      // Check if particle collides with moving or jumping player.
       if (!hasCollided) {
         for (let player of this.entities.player) {
-          if (player.vx !== 0 || player.vy !== 0) {
+          if (player.vx !== 0 || player.vy > 0) {
             if (x + dx > player.x && x + dx < player.x + 12 && y + dy > player.y && y + dy < player.y + 12) {
 
               let xx = Math.abs(player.x + 6 - x);

@@ -505,6 +505,7 @@ attribute vec2 a_vel;
 uniform vec2 u_canvas;
 uniform vec2 u_camera;
 varying vec4 v_color;
+varying float v_point_size;
 
 void main() {
 
@@ -523,9 +524,11 @@ void main() {
   if (a_type == 1.0) {
 
     float b = 1.0 - min(max(a_vel.y * -0.01, 0.0), 1.0);
-    gl_PointSize = 2.0 + (b * 2.0);
 
+    v_point_size = 2.0 + (b * 2.0);
     v_color = vec4(b * 0.5, 0.3 + (b * 0.7), (b * 0.5) + 0.5, 0.9 + (b * 0.1));
+
+    gl_PointSize = v_point_size;
   }
 
 }`;
@@ -534,16 +537,20 @@ precision mediump float;
 #endif
 
 varying vec4 v_color;
+varying float v_point_size;
 
 void main() {
 
-  vec2 point = gl_PointCoord.xy - 0.5;
-  float dist = (point.x * point.x) + (point.y * point.y);
+  gl_FragColor = v_color;
 
-  if (dist > 0.25) {
-    gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-  } else {
-    gl_FragColor = v_color;
+  if (v_point_size > 1.5) {
+
+    vec2 point = gl_PointCoord.xy - 0.5;
+    float dist = v_point_size > 1.5 ? (point.x * point.x) + (point.y * point.y) : 0.0;
+
+    if (dist > 0.25) {
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+    }
   }
 
 }`;

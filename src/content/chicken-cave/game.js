@@ -36,7 +36,7 @@ class _Game {
   addObject(obj) {
     if (!obj) {
       console.log('Warning: Tried to add an empty object.');
-      return;
+      return this;
     }
 
     // Add systems.
@@ -65,7 +65,7 @@ class _Game {
   deleteObject(obj) {
     if (!obj) {
       console.log('Warning: Tried to remove an empty object.');
-      return;
+      return this;
     }
 
     // Destroy.

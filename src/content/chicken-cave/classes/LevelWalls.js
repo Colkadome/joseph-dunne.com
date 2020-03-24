@@ -12,6 +12,7 @@ class _LevelWalls {
       walls: null,
       blockSize: 16,
       random: false,
+      ignoreRoof: false,
       ...opts,
     };
 
@@ -24,6 +25,7 @@ class _LevelWalls {
     this.walls = opts.walls;
     this.dripTimer = 0;
     this.random = opts.random;
+    this.ignoreRoof = opts.ignoreRoof;
   }
 
   init() {
@@ -203,7 +205,7 @@ class _LevelWalls {
 
   update(dT) {
     if (this.dripTimer < 0) {
-      this.spawnDrip();
+      //this.spawnDrip();
       this.dripTimer = -1;
     } else {
       this.dripTimer -= dT;
@@ -215,8 +217,10 @@ class _LevelWalls {
     const size = this.blockSize;
     const offset = size * 0.5;
 
+    const maxY = this.ignoreRoof ? this.h : this.h + 1;
+
     // X and Y range extended by 1 to draw edges.
-    for (let y = -1; y < this.h + 1; y += 1) {
+    for (let y = -1; y < maxY; y += 1) {
       for (let x = -1; x < this.w + 1; x += 1) {
 
         // Check if within boundaries of the grid.

@@ -336,6 +336,8 @@ class _Graphics {
     const gl = this._gl;
 
     // PASS 1 - Fade front texture with offset.
+    // The idea here is the texture slowly fades to give particles
+    // a nice tail.
 
     // Program.
     gl.disable(gl.DEPTH_TEST);
@@ -361,11 +363,7 @@ class _Graphics {
     // Blend func.
     gl.enable(gl.BLEND);
     gl.blendEquation(gl.FUNC_ADD);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-    // Clear.
-    gl.clearColor(0.0, 0.0, 0.0, 0.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ZERO);
 
     // Draw.
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -376,6 +374,7 @@ class _Graphics {
     this._fadeTextureBack = temp;
 
     // PASS 2 - Render points to texture.
+    // Render new points to the now-faded texture.
 
     // Program.
     gl.disable(gl.DEPTH_TEST);
@@ -415,6 +414,7 @@ class _Graphics {
     gl.drawArrays(gl.POINTS, first, count);
 
     // PASS 3 - Render to canvas.
+    // Render the resulting texture to the canvas.
 
     // Program.
     gl.disable(gl.DEPTH_TEST);

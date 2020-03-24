@@ -42,7 +42,6 @@ class _Particles {
   spawn(type, x, y, xv, yv) {
 
     const i = this._index * 2;
-    const c = this._index * 4;
 
     this.pointType[this._index] = type;
 
@@ -117,7 +116,7 @@ class _Particles {
       const xv = this.pointVel[i];// + ((Math.random() - 0.5) * 32);  // Add jiggle to unstick from walls.
       const yv = this.pointVel[i + 1];// + (Math.random() * 32);  // Add jiggle to unstick from walls.
 
-      // Check if particle is in bounds.
+      // Check if particle is in bounds, or has barely any velocity left.
       if (x < 0 || y < 0) {
         this.killParticle(n, x, y, xv, yv);
         continue;
@@ -193,6 +192,11 @@ class _Particles {
 
       // Update velocity.
       this.pointVel[i + 1] -= 256 * dT;
+
+      // Max gravity.
+      if (this.pointVel[i + 1] < -384) {
+        this.pointVel[i + 1] = -384;
+      }
 
     }
 

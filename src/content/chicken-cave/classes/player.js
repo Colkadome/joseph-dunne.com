@@ -74,8 +74,9 @@ class _Player {
         this.playJumpSound();
       }
     }
-    if (this.vy > -512) {
-      this.vy -= 256 * dT;
+    this.vy -= 256 * dT;
+    if (this.vy < -384) {
+      this.vy = -384;
     }
 
     this.grounded = false;

@@ -3,7 +3,7 @@
   index.js
 */
 
-window.addEventListener('load', function () {
+(function () {
 
   // Check for existence of components.
   if (typeof _Game === 'undefined') {
@@ -95,4 +95,4 @@ window.addEventListener('load', function () {
     graphics.destroy();
   });
 
-});
+})();

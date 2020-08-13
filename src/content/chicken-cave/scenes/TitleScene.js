@@ -50,7 +50,7 @@ class _TitleScene {
     this.waterfall = new _Waterfall({ x: 16, y: 80, xv: 32, yv: -32, rate: 0.02, xRange: 0, yRange: 16 });
     //this.waterfall2 = new _Waterfall({ x: 16 * 10, y: 174, xv: 40, yv: -80, rate: 0.02, xRange: 16, yRange: 0 });
     //this.waterfall3 = new _Waterfall({ x: 16 * 8, y: 142, xv: -80, yv: 10, rate: 0.02, xRange: 16, yRange: 0 });
-    this.rain = new _Waterfall({ x: 0, y: 40 * 15, xv: 0, yv: -384, rate: 0.1, xRange: 16 * 16, yRange: 0 });
+    this.rain = new _Waterfall({ x: 0, y: 60 * 16, xv: 0, yv: -384, rate: 0.1, xRange: 16 * 16, yRange: 0 });
     this.walls = this.getLevelWalls();
 
     this.game
